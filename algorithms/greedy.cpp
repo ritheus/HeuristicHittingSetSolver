@@ -19,7 +19,6 @@ vector<int> calculateSolution(int n, int m, vector<vector<int>> setSystem) {
         dominantVertex = findDominantVertex(count);
         solutionSet.push_back(dominantVertex);
         setSystem = removeEdgesContainingVertex(dominantVertex, setSystem);
-        toStringGreedy(setSystem);
     }
 
     // Insert solution size
@@ -68,22 +67,9 @@ vector<vector<int>> removeEdgesContainingVertex(int vertex, vector<vector<int>> 
 
 bool exitCondition(vector<vector<int>> setSystem) {
     for (int i = 0; i<setSystem.size(); i++) {
-        //cout << "i: " << i << " " << setSystem[i].empty() << endl;
         if (!setSystem[i].empty()) {
             return false;
         }
     }
     return true;
-}
-
-string toStringGreedy(vector<vector<int>> setSystem) {
-    stringstream ss;
-    for (vector<int> line : setSystem) {
-        ss << "[ ";
-        for (int element : line) {
-            ss << element << " ";
-        }
-        ss << "]" << endl;
-    }
-    return ss.str();
 }
