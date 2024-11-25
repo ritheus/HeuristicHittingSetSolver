@@ -1,16 +1,17 @@
 #include <vector>
-#include <set>
+#include <unordered_set>
 #include <iostream>
 #include <sstream>
+#include <unordered_map>
 #include "greedy.h"
 
 using namespace std;
 
-set<int> calculateSolution(int n, int m, vector<vector<int>> setSystem) {
+unordered_set<int> calculateSolution(int n, int m, vector<vector<int>> setSystem) {
     cout << "(using greedy algorithm...)" << endl;
 
     vector<int> count(n);
-    set<int> solutionSet;
+    unordered_set<int> solutionSet;
     int dominantVertex;
 
     while (!exitCondition(setSystem)) { // Das sollte irgendwie einfacher gehen, schau ich noch

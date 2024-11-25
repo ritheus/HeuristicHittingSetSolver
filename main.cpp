@@ -56,7 +56,7 @@ string toString(vector<int> vec) {
     return ss.str();
 }
 
-string toString(set<int> set) {
+string toString(unordered_set<int> set) {
     stringstream ss;
     for (int elem : set) {
         ss << elem << endl;
@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
     cout << toString(setSystem) << endl;
 
     // Berechnung
-    set<int> solution = calculateSolution(setSystemParameters[0], setSystemParameters[1], setSystem);
+    unordered_set<int> solution = calculateSolution(setSystemParameters[0], setSystemParameters[1], setSystem);
     cout << "Folgende Loesung wurde berechnet:" << endl;
     cout << solution.size() << endl;
     cout << toString(solution) << endl;
