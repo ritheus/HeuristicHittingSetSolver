@@ -5,7 +5,7 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${fileDirname}\\${fileBasenameNoExtension}.exe",
-            "args": ["bremen_subgraph_250.hgr"],
+            "args": ["test.hgr"],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],

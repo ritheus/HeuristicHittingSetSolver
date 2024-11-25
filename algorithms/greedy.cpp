@@ -1,28 +1,24 @@
 #include <vector>
+#include <set>
 #include <iostream>
 #include <sstream>
 #include "greedy.h"
 
 using namespace std;
 
-vector<int> calculateSolution(int n, int m, vector<vector<int>> setSystem) {
+set<int> calculateSolution(int n, int m, vector<vector<int>> setSystem) {
     cout << "(using greedy algorithm...)" << endl;
 
     vector<int> count(n);
-    vector<int> solutionSet;
+    set<int> solutionSet;
     int dominantVertex;
 
-    bool solution_found = false;
-
-    while (!exitCondition(setSystem)) {
+    while (!exitCondition(setSystem)) { // Das sollte irgendwie einfacher gehen, schau ich noch
         count = updateCount(n, m, setSystem);
         dominantVertex = findDominantVertex(count);
-        solutionSet.push_back(dominantVertex);
+        solutionSet.insert(dominantVertex);
         setSystem = removeEdgesContainingVertex(dominantVertex, setSystem);
     }
-
-    // Insert solution size
-    solutionSet.insert(solutionSet.begin(), solutionSet.size());
 
     return solutionSet;
 }

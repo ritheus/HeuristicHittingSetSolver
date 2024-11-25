@@ -56,6 +56,14 @@ string toString(vector<int> vec) {
     return ss.str();
 }
 
+string toString(set<int> set) {
+    stringstream ss;
+    for (int elem : set) {
+        ss << elem << endl;
+    }
+    return ss.str();
+}
+
 int main(int argc, char *argv[]) {
     // Fehlererkennung
     if (argc != 2) {
@@ -97,14 +105,16 @@ int main(int argc, char *argv[]) {
     cout << toString(setSystem) << endl;
 
     // Berechnung
-    vector<int> solution = calculateSolution(setSystemParameters[0], setSystemParameters[1], setSystem);
+    set<int> solution = calculateSolution(setSystemParameters[0], setSystemParameters[1], setSystem);
     cout << "Folgende Loesung wurde berechnet:" << endl;
+    cout << solution.size() << endl;
     cout << toString(solution) << endl;
 
     // Lösung in eine Datei schreiben
     string outputFileName = inputFileName.replace(inputFileName.find(".hgr"), 4, ".sol");
     ofstream outputFile(outputFileName);
     if (outputFile.is_open()) {
+        outputFile << solution.size() << endl;
         for (int num : solution) {
             outputFile << num << endl;
         }
