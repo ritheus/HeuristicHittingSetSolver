@@ -17,33 +17,31 @@ set<int> calculateSolution(int n, int m, vector<vector<int>> setSystem) {
         count = updateCount(n, m, setSystem);
         dominantVertex = findDominantVertex(count);
         solutionSet.insert(dominantVertex);
-        setSystem = removeEdgesContainingVertex(dominantVertex, setSystem);
+        removeEdgesContainingVertex(dominantVertex, setSystem);
     }
 
     return solutionSet;
 }
 
-vector<int> updateCount(int n, int m, vector<vector<int>> setSystem) {
+vector<int> updateCount(int n, int m, const vector<vector<int>>& setSystem) {
     vector<int> count(n);
 
     for (int i = 0; i<m; i++) {
         for (int j = 0; j<setSystem[i].size(); j++) {
-            if (!setSystem[i].empty()) {
-                count[setSystem[i][j]-1]++;
-            }
+            count[setSystem[i][j]-1]++;
         }
     }
 
     return count;
 }
 
-int findDominantVertex(vector<int> count) {
+int findDominantVertex(const vector<int>& count) {
     auto it = max_element(count.begin(), count.end());
     int index = distance(count.begin(), it);
     return index + 1;
 }
 
-vector<vector<int>> removeEdgesContainingVertex(int vertex, vector<vector<int>> setSystem) {
+void removeEdgesContainingVertex(int vertex, vector<vector<int>>& setSystem) {
     vector<int> toRemove;
 
     for (int i = 0; i<setSystem.size(); i++) {
@@ -57,11 +55,9 @@ vector<vector<int>> removeEdgesContainingVertex(int vertex, vector<vector<int>> 
         //setSystem.erase(setSystem.begin() + i); führt dazu, dass updateCount() so nicht mehr funktioniert
         setSystem[toRemove[i]] = vector<int>(0);
     }
-
-    return setSystem;
 }
 
-bool exitCondition(vector<vector<int>> setSystem) {
+bool exitCondition(const vector<vector<int>>& setSystem) {
     for (int i = 0; i<setSystem.size(); i++) {
         if (!setSystem[i].empty()) {
             return false;
