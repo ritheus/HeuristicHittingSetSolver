@@ -10,7 +10,7 @@ using namespace std;
 unordered_set<int> calculateSolution(int n, int m, vector<vector<int>> setSystem) {
     cout << "(using greedy algorithm...)" << endl;
 
-    vector<int> count(n);
+    unordered_map<int, int> count;
     unordered_set<int> solutionSet;
     int dominantVertex;
 
@@ -24,22 +24,28 @@ unordered_set<int> calculateSolution(int n, int m, vector<vector<int>> setSystem
     return solutionSet;
 }
 
-vector<int> updateCount(int n, int m, const vector<vector<int>>& setSystem) {
-    vector<int> count(n);
+unordered_map<int, int> updateCount(int n, int m, const vector<vector<int>>& setSystem) {
+    unordered_map<int, int> count;
 
     for (int i = 0; i<m; i++) {
         for (int j = 0; j<setSystem[i].size(); j++) {
-            count[setSystem[i][j]-1]++;
+            count[setSystem[i][j]]++;
         }
     }
 
     return count;
 }
 
-int findDominantVertex(const vector<int>& count) {
-    auto it = max_element(count.begin(), count.end());
-    int index = distance(count.begin(), it);
-    return index + 1;
+int findDominantVertex(const unordered_map<int, int>& count) {
+    int maxKey = 1;
+    int maxValue = 0;
+    for (const auto& pair : count) {
+        if (pair.second > maxValue) {
+            maxValue = pair.second;
+            maxKey = pair.first;
+        }
+    }
+    return maxKey;
 }
 
 void removeEdgesContainingVertex(int vertex, vector<vector<int>>& setSystem) {
