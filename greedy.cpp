@@ -2,7 +2,7 @@
 #include <unordered_set>
 #include <iostream>
 #include <sstream>
-#include "../aliases.hpp"
+#include "aliases.hpp"
 #include "greedy.hpp"
 
 std::vector<Node> calculateSolution(NumNodes n, NumEdges m, std::vector<std::vector<Node>>& setSystem) {
@@ -23,7 +23,7 @@ std::vector<Node> calculateSolution(NumNodes n, NumEdges m, std::vector<std::vec
 }
 
 std::vector<uint32_t> updateCount(NumNodes n, NumEdges m, const std::vector<std::vector<Node>>& setSystem) {
-    std::vector<uint32_t> count(m);
+    std::vector<uint32_t> count(n, 0);
 
     for (auto&& edge : setSystem) {
         for (Node node : edge) {

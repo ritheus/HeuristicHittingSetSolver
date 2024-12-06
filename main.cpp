@@ -5,7 +5,7 @@
 #include <vector>
 #include <tuple>
 #include "aliases.hpp"
-#include "algorithms/greedy.hpp"
+#include "greedy.hpp"
 
 std::tuple<NumNodes, NumEdges> getSetSystemParameters(const std::string& s) {
     NumNodes n;
@@ -71,6 +71,12 @@ std::string toString(std::unordered_set<Node>& set) {
 }
 
 int main(int argc, char *argv[]) {
+#if _DEBUG
+    argc = 2;
+    const char* fakeArgv[] = { argv[0], "bremen_subgraph_20.hgr" };
+    argv = const_cast<char**>(fakeArgv);
+#endif
+
     // Fehlererkennung
     if (argc != 2) {
         throw std::invalid_argument("Es muss genau der Pfad zum Set System übergeben werden.");
