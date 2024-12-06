@@ -3,63 +3,69 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include "algorithms/greedy.h"
+#include <tuple>
+#include "aliases.hpp"
+#include "algorithms/greedy.hpp"
 
-using namespace std;
-
-vector<int> getSetSystemParameters(const string& s) {
-    vector<int> result;
-    istringstream ss(s);
-    int tmp;
-    string token;
+std::tuple<NumNodes, NumEdges> getSetSystemParameters(const std::string& s) {
+    NumNodes n;
+    NumEdges m;
+    std::istringstream ss(s);
+    std::string token;
     ss >> token;
     if (token != "p") {
-        cerr << "Invalid Format!" << endl;
+        std::cerr << "Invalid Format!" << std::endl;
     }
     ss >> token;
     if (token != "hs") {
-        cerr << "Invalid Format!" << endl;
+        std::cerr << "Invalid Format!" << std::endl;
     }
+    ss >> n;
+    ss >> m;
+    return std::make_tuple(n, m);
+}
+
+/**
+ * Extracts all integer values from the given string and returns them as a vector.
+ *
+ * **Interpretation:**
+ * The string represents a hyperedge in a hypergraph.
+ * Each integer in the string corresponds to a node connected by this hyperedge.
+ */
+std::vector<Node> getAllNodesFromEdge(const std::string& edge) {
+    std::vector<Node> result;
+    std::istringstream ss(edge);
+    Node tmp;
     while(ss >> tmp) {
         result.push_back(tmp);
     }
     return result;
 }
 
-vector<int> getAllIntsFromString(const string& s) {
-    vector<int> result;
-    istringstream ss(s);
-    int tmp;
-    while(ss >> tmp) {
-        result.push_back(tmp);
-    }
-    return result;
-}
-
-string toString(vector<vector<int>> setSystem) {
-    stringstream ss;
-    for (vector<int> line : setSystem) {
+std::string toString(std::vector<std::vector<Node>>& setSystem) {
+    std::stringstream ss;
+    for (auto&& edge : setSystem) {
         ss << "[ ";
-        for (int element : line) {
-            ss << element << " ";
+        for (const Node node : edge) {
+            ss << node << " ";
         }
-        ss << "]" << endl;
+        ss << "]" << '\n';
     }
     return ss.str();
 }
 
-string toString(vector<int> vec) {
-    stringstream ss;
-    for (int elem : vec) {
-        ss << elem << endl;
+std::string toString(std::vector<Node>& vec) {
+    std::stringstream ss;
+    for (const Node node : vec) {
+        ss << node << '\n';
     }
     return ss.str();
 }
 
-string toString(unordered_set<int> set) {
-    stringstream ss;
-    for (int elem : set) {
-        ss << elem << endl;
+std::string toString(std::unordered_set<Node>& set) {
+    std::stringstream ss;
+    for (const Node node : set) {
+        ss << node << '\n';
     }
     return ss.str();
 }
@@ -67,56 +73,57 @@ string toString(unordered_set<int> set) {
 int main(int argc, char *argv[]) {
     // Fehlererkennung
     if (argc != 2) {
-        throw invalid_argument("Es muss genau der Pfad zum Set System übergeben werden.");
+        throw std::invalid_argument("Es muss genau der Pfad zum Set System übergeben werden.");
     }
-    string inputFileName = argv[1];
+    std::string inputFileName = argv[1];
 
     // Modell
-    vector<vector<int>> setSystem;
-    vector<int> setSystemParameters;
+    std::vector<std::vector<Node>> setSystem;
+    NumNodes n;
+    NumEdges m;
 
     // Eingabedatei parsen und Modell füllen
-    ifstream inputFile (inputFileName);
+    std::ifstream inputFile (inputFileName);
     if (inputFile.is_open()) {
-        string line;
+        std::string line;
         while (getline(inputFile, line)) {
             if (line[0] == 'c') {
 
             }
             else if (line[0] == 'p') {
-                setSystemParameters = getSetSystemParameters(line);
-                if (setSystemParameters.size() >= 2) {
-                    setSystem.reserve(setSystemParameters[1]);
+                std::tie(n, m) = getSetSystemParameters(line);
+                if (n > 0 && m > 0) {
+                    //setSystem.reserve(m); ergibt keinen sinn
                 }
                 else {
-                    cout << "setSystemParameters konnten nicht ermittelt werden." << endl;
+                    std::cout << "setSystemParameters konnten nicht ermittelt werden." << std::endl;
                 }
             }
             else {
-                setSystem.push_back(getAllIntsFromString(line));
+                setSystem.push_back(getAllNodesFromEdge(line));
             }
         }
         inputFile.close();
     }
 
     // Eingabe ausgeben
-    cout << "Eingabe:" << endl;
-    cout << "n: " << setSystemParameters[0] << " m: " << setSystemParameters[1] << endl;
-    cout << toString(setSystem) << endl;
+    std::cout << "Eingabe:" << std::endl;
+    std::cout << "n: " << n << " m: " << m << std::endl;
+    std::cout << toString(setSystem) << std::endl;
 
     // Berechnung
-    unordered_set<int> solution = calculateSolution(setSystemParameters[0], setSystemParameters[1], setSystem);
-    cout << "Folgende Loesung wurde berechnet:" << endl;
-    cout << solution.size() << endl;
-    cout << toString(solution) << endl;
+    std::vector<Node> solution = calculateSolution(n, m, setSystem);
+    std::cout << "Folgende Loesung wurde berechnet:" << std::endl;
+    std::cout << solution.size() << std::endl;
+    std::cout << toString(solution) << std::endl;
 
     // Lösung in eine Datei schreiben
-    string outputFileName = inputFileName.replace(inputFileName.find(".hgr"), 4, ".sol");
-    ofstream outputFile(outputFileName);
+    std::string outputFileName = inputFileName.replace(inputFileName.find(".hgr"), 4, ".sol");
+    std::ofstream outputFile(outputFileName);
     if (outputFile.is_open()) {
-        outputFile << solution.size() << endl;
-        for (int num : solution) {
-            outputFile << num << endl;
+        outputFile << solution.size() << '\n';
+        for (Node node : solution) {
+            outputFile << node << '\n';
         }
         outputFile.close();
     }
