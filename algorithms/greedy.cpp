@@ -2,71 +2,62 @@
 #include <unordered_set>
 #include <iostream>
 #include <sstream>
-#include <unordered_map>
-#include "greedy.h"
+#include "../aliases.hpp"
+#include "greedy.hpp"
 
-using namespace std;
+std::vector<Node> calculateSolution(NumNodes n, NumEdges m, std::vector<std::vector<Node>>& setSystem) {
+    std::cout << "(using greedy algorithm...)" << std::endl;
 
-unordered_set<int> calculateSolution(int n, int m, vector<vector<int>> setSystem) {
-    cout << "(using greedy algorithm...)" << endl;
-
-    unordered_map<int, int> count;
-    unordered_set<int> solutionSet;
-    int dominantVertex;
+    std::vector<uint32_t> count(m);
+    std::vector<Node> solutionSet;
+    Node dominantNode;
 
     while (!exitCondition(setSystem)) { // Das sollte irgendwie einfacher gehen, schau ich noch
         count = updateCount(n, m, setSystem);
-        dominantVertex = findDominantVertex(count);
-        solutionSet.insert(dominantVertex);
-        removeEdgesContainingVertex(dominantVertex, setSystem);
+        dominantNode = findDominantNode(count);
+        solutionSet.push_back(dominantNode);
+        removeEdgesContainingNode(dominantNode, setSystem);
     }
 
     return solutionSet;
 }
 
-unordered_map<int, int> updateCount(int n, int m, const vector<vector<int>>& setSystem) {
-    unordered_map<int, int> count;
+std::vector<uint32_t> updateCount(NumNodes n, NumEdges m, const std::vector<std::vector<Node>>& setSystem) {
+    std::vector<uint32_t> count(m);
 
-    for (int i = 0; i<m; i++) {
-        for (int j = 0; j<setSystem[i].size(); j++) {
-            count[setSystem[i][j]]++;
+    for (auto&& edge : setSystem) {
+        for (Node node : edge) {
+            count[node-1]++;
         }
     }
 
     return count;
 }
 
-int findDominantVertex(const unordered_map<int, int>& count) {
-    int maxKey = 1;
-    int maxValue = 0;
-    for (const auto& pair : count) {
-        if (pair.second > maxValue) {
-            maxValue = pair.second;
-            maxKey = pair.first;
+Node findDominantNode(const std::vector<uint32_t>& count) {
+    Node maxNode = 1;
+    uint32_t maxOccurences = 0;
+    for (uint32_t i=0; i<count.size(); i++) {
+        if (count[i] > maxOccurences) {
+            maxOccurences = count[i];
+            maxNode = i+1;
         }
     }
-    return maxKey;
+    return maxNode;
 }
 
-void removeEdgesContainingVertex(int vertex, vector<vector<int>>& setSystem) {
-    vector<int> toRemove;
-
-    for (int i = 0; i<setSystem.size(); i++) {
-        bool cond = find(setSystem[i].begin(), setSystem[i].end(), vertex) != setSystem[i].end();
+void removeEdgesContainingNode(Node node, std::vector<std::vector<Node>>& setSystem) {
+    for (auto&& edge : setSystem) {
+        bool cond = find(edge.begin(), edge.end(), node) != edge.end();
         if (cond) {
-            toRemove.push_back(i);
+            edge = std::vector<Node>(0);
         }
-    }
-
-    for (int i = 0; i<toRemove.size(); i++) {
-        //setSystem.erase(setSystem.begin() + i); führt dazu, dass updateCount() so nicht mehr funktioniert
-        setSystem[toRemove[i]] = vector<int>(0);
     }
 }
 
-bool exitCondition(const vector<vector<int>>& setSystem) {
-    for (int i = 0; i<setSystem.size(); i++) {
-        if (!setSystem[i].empty()) {
+bool exitCondition(const std::vector<std::vector<Node>>& setSystem) {
+    for (auto&& edge : setSystem) {
+        if (!edge.empty()) { // edge does not exist anymore because it contained a node that got deleted
             return false;
         }
     }
