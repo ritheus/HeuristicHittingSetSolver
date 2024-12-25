@@ -47,7 +47,7 @@ std::tuple<NumNodes, NumEdges, std::vector<std::vector<Node>>> parseInputFile(co
             else if (line[0] == 'p') {
                 std::tie(n, m) = getSetSystemParameters(line);
                 if (n <= 0 || m <= 0) {
-                    std::cout << "setSystemParameters konnten nicht ermittelt werden." << std::endl;
+                    std::cerr << "setSystemParameters konnten nicht ermittelt werden." << std::endl;
                 }
             }
             else {
@@ -55,6 +55,37 @@ std::tuple<NumNodes, NumEdges, std::vector<std::vector<Node>>> parseInputFile(co
             }
         }
         inputFile.close();
+    }
+
+    return std::make_tuple(n, m, std::move(setSystem));
+}
+
+std::tuple<NumNodes, NumEdges, std::vector<std::vector<Node>>> parseStdIn() {
+    std::istringstream ss;
+    std::vector<std::vector<Node>> setSystem;
+    NumNodes n = 0;
+    NumEdges m = 0;
+
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        if (line.empty()) {
+            continue;
+        }
+        if (line[0] == 'c') {
+            continue;
+        }
+        else if (line[0] == 'p') {
+            std::tie(n, m) = getSetSystemParameters(line);
+            if (n <= 0 || m <= 0) {
+                std::cerr << "setSystemParameters konnten nicht ermittelt werden." << std::endl;
+            }
+        }
+        else if (line[0] == ' ') {
+            continue;
+        }
+        else {
+            setSystem.push_back(getAllNodesFromEdge(line, ss));
+        }
     }
 
     return std::make_tuple(n, m, std::move(setSystem));
@@ -68,6 +99,13 @@ void writeToFile(const std::string& outputFileName, const std::vector<Node>& sol
             outputFile << node << '\n';
         }
         outputFile.close();
+    }
+}
+
+void writeToStdOut(const std::vector<Node>& solution) {
+    std::cout << solution.size() << '\n';
+    for (Node node : solution) {
+        std::cout << node << '\n';
     }
 }
 
