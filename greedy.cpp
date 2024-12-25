@@ -5,6 +5,8 @@
 #include "aliases.hpp"
 #include "greedy.hpp"
 
+std::atomic<bool> sigterm_received(false);
+
 std::vector<Node> calculateSolution(NumNodes& n, NumEdges& m, std::vector<std::vector<Node>>& setSystem) {
 #if _DEBUG
     std::cout << "(using greedy algorithm...)" << std::endl;
@@ -17,11 +19,13 @@ std::vector<Node> calculateSolution(NumNodes& n, NumEdges& m, std::vector<std::v
     updateCount(count, setSystem, recentlyRemovedEdges); // O(n * m * log n)
     std::vector<Node> solutionSet;
 
-    while (!setSystem.empty()) { // O(1)
+    while (!setSystem.empty() && !sigterm_received) { // O(1)
         updateCount(count, recentlyAddedEdges, recentlyRemovedEdges); // O(??? * log n)
         auto [majorityNode, majorityNodeGain] = count.topPair(); // O(1)
         solutionSet.push_back(majorityNode); // O(1)
+        if (sigterm_received) break;
         recentlyRemovedEdges = removeEdgesContainingNode(majorityNode, setSystem, removedEdges); // O(n * m), wenn man edges als sets implementiert, wird das O(log n * m)...
+        if (sigterm_received) break;
         recentlyAddedEdges = shrinkSolutionIfApplicable(n, solutionSet, removedEdges, majorityNodeGain, setSystem);
     } // und das alles noch mal O(n)
 

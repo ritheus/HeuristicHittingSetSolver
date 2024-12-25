@@ -1,6 +1,13 @@
 #include "utils.hpp"
 #include "greedy.hpp"
 #include <iostream>
+#include <csignal>
+
+void signalHandler(int signal) {
+    if (signal == SIGTERM) {
+        sigterm_received = true;
+    }
+}
 
 int main(int argc, char *argv[]) {
 #if _DEBUG
@@ -10,8 +17,9 @@ int main(int argc, char *argv[]) {
 #endif
 
     // Modell einlesen
-    //auto [n, m, setSystem] = parseInputFile(inputFileName);
+    //auto [n, m, setSystem] = parseInputFile(argv[1]);
     auto [n, m, setSystem] = parseStdIn();
+    std::signal(SIGTERM, signalHandler);
 
     // Berechnung
     std::vector<Node> solution = calculateSolution(n, m, setSystem);

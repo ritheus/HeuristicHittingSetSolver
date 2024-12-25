@@ -27,8 +27,8 @@ private:
 public:
     // Konstruktor
     PriorityQueue(Compare comp = Compare()) : elementCompare{ comp } {}
-    PriorityQueue(const std::uint32_t num_nodes, Compare comp = Compare()) : elementCompare{ comp } {
-        for (std::uint32_t i = 0; i < num_nodes; i++) {
+    PriorityQueue(const uint32_t num_nodes, Compare comp = Compare()) : elementCompare{ comp } {
+        for (uint32_t i = 0; i < num_nodes; i++) {
             push(i+1, 0);
         }
     }
