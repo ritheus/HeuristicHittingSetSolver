@@ -5,53 +5,46 @@
 #include "aliases.hpp"
 #include "greedy.hpp"
 
-std::vector<Node> calculateSolution(NumNodes n, NumEdges m, std::vector<std::vector<Node>>& setSystem) {
+std::vector<Node> calculateSolution(NumNodes& n, NumEdges& m, std::vector<std::vector<Node>>& setSystem) {
 #if _DEBUG
     std::cout << "(using greedy algorithm...)" << std::endl;
 #endif
 
     std::vector<std::vector<Node>> removedEdges;
-    std::vector<uint32_t> count(n);
+    std::vector<std::vector<Node>> recentlyRemovedEdges;
+    std::vector<std::vector<Node>> recentlyAddedEdges;
+    PriorityQueue<Node, uint32_t> count(n);
+    updateCount(count, setSystem, recentlyRemovedEdges); // O(n * m * log n)
     std::vector<Node> solutionSet;
 
     while (!setSystem.empty()) { // O(1)
-        count = updateCount(n, m, setSystem); // O(n * m)
-        auto [majorityNode, majorityNodeGain] = findMajorityNode(count); // O(n)
+        updateCount(count, recentlyAddedEdges, recentlyRemovedEdges); // O(??? * log n)
+        auto [majorityNode, majorityNodeGain] = count.topPair(); // O(1)
         solutionSet.push_back(majorityNode); // O(1)
-        removeEdgesContainingNode(majorityNode, setSystem, removedEdges); // O(n * m), wenn man edges als sets implementiert, wird das O(log n * m)...
-        shrinkSolutionIfApplicable(n, solutionSet, removedEdges, majorityNodeGain, setSystem);
+        recentlyRemovedEdges = removeEdgesContainingNode(majorityNode, setSystem, removedEdges); // O(n * m), wenn man edges als sets implementiert, wird das O(log n * m)...
+        recentlyAddedEdges = shrinkSolutionIfApplicable(n, solutionSet, removedEdges, majorityNodeGain, setSystem);
     } // und das alles noch mal O(n)
 
     return solutionSet;
 }
 
-std::vector<uint32_t> updateCount(NumNodes n, NumEdges m, const std::vector<std::vector<Node>>& setSystem) {
-    std::vector<uint32_t> count(n, 0);
-
-    for (auto&& edge : setSystem) {
+void updateCount(PriorityQueue<Node, uint32_t>& count, const std::vector<std::vector<Node>>& recentlyAddedEdges, const std::vector<std::vector<Node>>& recentlyRemovedEdges) {
+    for (auto&& edge : recentlyAddedEdges) {
         for (Node node : edge) {
-            count[node - 1]++;
+            count.increment(node);
         }
     }
-
-    return count;
-}
-
-std::tuple<Node, uint32_t> findMajorityNode(const std::vector<uint32_t>& count) {
-    Node maxNode = 1;
-    uint32_t maxOccurences = count[maxNode - 1];
-    for (uint32_t i = 0; i < count.size(); i++) {
-        if (count[i] > maxOccurences) {
-            maxOccurences = count[i];
-            maxNode = i + 1;
+    for (auto&& edge : recentlyRemovedEdges) {
+        for (Node node : edge) {
+            count.decrement(node);
         }
     }
-    return std::tuple<Node, uint32_t>(maxNode, maxOccurences);
 }
 
-void shrinkSolutionIfApplicable(const NumNodes n, std::vector<Node>& solutionSet, std::vector<std::vector<Node>>& removedEdges, uint32_t majorityNodeGain, std::vector<std::vector<Node>>& setSystem) {
+std::vector<std::vector<Node>> shrinkSolutionIfApplicable(const NumNodes n, std::vector<Node>& solutionSet, std::vector<std::vector<Node>>& removedEdges, uint32_t majorityNodeGain, std::vector<std::vector<Node>>& setSystem) {
     Node minorityNode;
-    uint32_t minorityNodeLoss = removedEdges.size();
+    size_t minorityNodeLoss = removedEdges.size();
+    std::vector<std::vector<Node>> recentlyAddedEdges;
     std::vector<std::vector<Node>> removedEdgesForNode;
     std::vector<std::vector<Node>> removedEdgesForMinorityNode;
 
@@ -95,21 +88,29 @@ void shrinkSolutionIfApplicable(const NumNodes n, std::vector<Node>& solutionSet
             auto it = std::find(removedEdges.begin(), removedEdges.end(), edge);
             if (it != removedEdges.end()) {
                 removedEdges.erase(it);
+                recentlyAddedEdges.push_back(edge);
             }
             setSystem.push_back(edge);
         }
     }
+
+    return recentlyAddedEdges;
 }
 
-void removeEdgesContainingNode(Node node, std::vector<std::vector<Node>>& setSystem, std::vector<std::vector<Node>>& removedEdges) {
+std::vector<std::vector<Node>> removeEdgesContainingNode(Node node, std::vector<std::vector<Node>>& setSystem, std::vector<std::vector<Node>>& removedEdges) {
+    std::vector<std::vector<Node>> recentlyRemovedEdges;
+
     setSystem.erase(
         std::remove_if(setSystem.begin(), setSystem.end(),
             [&](auto& edge) {
                 if (std::find(edge.begin(), edge.end(), node) != edge.end()) {
+                    recentlyRemovedEdges.push_back(edge);
                     removedEdges.push_back(std::move(edge));
                     return true; // Mark for removal
                 }
                 return false; 
             }),
         setSystem.end());
+
+    return recentlyRemovedEdges;
 }
