@@ -12,27 +12,29 @@ namespace Greedy {
 #if _DEBUG
         std::cout << "(using greedy algorithm...)" << std::endl;
 #endif
-        std::vector<std::vector<Node>> removedEdges;
         std::vector<std::vector<Node>> recentlyRemovedEdges;
+        std::unordered_set<uint32_t> removedEdgesIndizes;
         pq::updatable_priority_queue<Node, uint32_t> count; // Speicher reservieren?
-        setCount(count, setSystem); // O(n * m * log n)
+        std::vector<std::vector<uint32_t>> invertedSetSystem(n+1); // n+1 because the given format enumerates nodes beginning with 1 and i dont want to deal with conversion
+        setCount(count, setSystem, invertedSetSystem); // O(n * m * log n)
         std::vector<Node> solutionSet;
 
-        while (!setSystem.empty() && !sigterm_received) { // O(1)
-            updateCount(count, recentlyRemovedEdges); // O(??? * log n)
+        while (removedEdgesIndizes.size() < setSystem.size() && !sigterm_received) { // O(1)
             auto [majorityNodeGain, majorityNode] = count.top(); // O(1)
             solutionSet.push_back(majorityNode); // O(1)
             if (sigterm_received) break;
-            recentlyRemovedEdges = removeEdgesContainingNode(majorityNode, setSystem, removedEdges); // O(n * m), wenn man edges als sets implementiert, wird das O(log n * m)...
+            recentlyRemovedEdges = removeEdgesContainingNode(majorityNode, setSystem, invertedSetSystem, removedEdgesIndizes); // O(n * m), wenn man edges als sets implementiert, wird das O(log n * m)...
+            updateCount(count, recentlyRemovedEdges); // O(??? * log n)
         } // und das alles noch mal O(n)
 
         return solutionSet;
     }
 
-    void setCount(pq::updatable_priority_queue<Node, uint32_t>& count, const std::vector<std::vector<Node>>& setSystem) {
-        for (auto&& edge : setSystem) {
-            for (Node node : edge) {
+    void setCount(pq::updatable_priority_queue<Node, uint32_t>& count, const std::vector<std::vector<Node>>& setSystem, std::vector<std::vector<uint32_t>>& invertedSetSystem) {
+        for (uint32_t i = 0; i < setSystem.size(); i++) {
+            for (Node node : setSystem[i]) {
                 count.set(node, count.get_priority(node).second + 1); // increment priority
+                invertedSetSystem[node].push_back(i);
             }
         }
     }
@@ -45,20 +47,14 @@ namespace Greedy {
         }
     }
 
-    std::vector<std::vector<Node>> removeEdgesContainingNode(Node node, std::vector<std::vector<Node>>& setSystem, std::vector<std::vector<Node>>& removedEdges) {
+    std::vector<std::vector<Node>> removeEdgesContainingNode(Node node, std::vector<std::vector<Node>>& setSystem, std::vector<std::vector<uint32_t>>& invertedSetSystem, std::unordered_set<uint32_t>& removedEdgesIndizes) {
         std::vector<std::vector<Node>> recentlyRemovedEdges;
 
-        setSystem.erase(
-            std::remove_if(setSystem.begin(), setSystem.end(),
-                [&](auto& edge) {
-                    if (std::find(edge.begin(), edge.end(), node) != edge.end()) {
-                        recentlyRemovedEdges.push_back(edge);
-                        removedEdges.push_back(std::move(edge));
-                        return true; // Mark for removal
-                    }
-                    return false;
-                }),
-            setSystem.end());
+        for (uint32_t edgeIndex : invertedSetSystem[node]) {
+            if (removedEdgesIndizes.insert(edgeIndex).second) {
+                recentlyRemovedEdges.push_back(setSystem[edgeIndex]);
+            }
+        }
 
         return recentlyRemovedEdges;
     }
