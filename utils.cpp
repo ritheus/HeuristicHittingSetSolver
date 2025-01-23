@@ -102,7 +102,7 @@ void writeToFile(const std::string& outputFileName, const std::vector<Node>& sol
     }
 }
 
-void writeToStdOut(const std::vector<Node>& solution) {
+void writeToStdOut(const std::unordered_set<Node>& solution) {
     std::cout << solution.size() << '\n';
     for (Node node : solution) {
         std::cout << node << '\n';

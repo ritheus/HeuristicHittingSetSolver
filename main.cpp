@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
     std::signal(SIGTERM, signalHandler);
 
     // Berechnung
-    std::vector<Node> solution;
+    std::unordered_set<Node> solution;
     if (useGreedy) {
         solution = Greedy::calculateSolution(n, m, setSystem);
     }
