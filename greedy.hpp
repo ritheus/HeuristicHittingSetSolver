@@ -8,7 +8,5 @@
 #include <atomic>
 
 namespace Greedy {
-	extern std::atomic<bool> sigterm_received;
-
 	std::unordered_set<Node> calculateSolution(NumNodes&, NumEdges&, std::vector<std::vector<Node>>&);
 }
