@@ -1,19 +1,14 @@
 #include "utils.hpp"
 #include "adaptiveGreedy.hpp"
 #include "greedy.hpp"
+#include "sigtermHandler.hpp"
 #include <iostream>
-#include <csignal>
-
-void signalHandler(int signal) {
-    if (signal == SIGTERM) {
-        Greedy::sigterm_received = true;
-    }
-}
+#include <fstream>
 
 int main(int argc, char *argv[]) {
 #if _DEBUG
     argc = 3;
-    const char* fakeArgv[] = { argv[0], "greedy", "bremen_subgraph_20.hgr"};
+    const char* fakeArgv[] = { argv[0], "adaptiveGreedy", "bremen_subgraph_20.hgr"};
     argv = const_cast<char**>(fakeArgv);
 #endif
 
@@ -27,11 +22,20 @@ int main(int argc, char *argv[]) {
     }
 
     // Modell einlesen
+    std::tuple<NumNodes, NumEdges, std::vector<std::vector<Node>>> result;
 #if _DEBUG
-    auto [n, m, setSystem] = parseInputFile(argv[2]);
+    std::ifstream inputFile(argv[2]);
+    if (inputFile.is_open()) {
+        result = parseInputStream(inputFile);
+    }
+    else {
+        std::cout << "File couldnt be read!" << std::endl;
+        result = parseInputStream(std::cin);
+    }
+    auto [n, m, setSystem] = result;
 #endif
 #ifndef _DEBUG
-    auto [n, m, setSystem] = parseStdIn();
+    auto [n, m, setSystem] = parseInputStream(std::cin);
 #endif
 
     std::signal(SIGTERM, signalHandler);

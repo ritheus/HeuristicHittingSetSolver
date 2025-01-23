@@ -5,6 +5,7 @@
 #include "aliases.hpp"
 #include "adaptiveGreedy.hpp"
 #include "hypergraph.hpp"
+#include "sigtermHandler.hpp"
 
 Hypergraph hypergraph;
 std::unordered_set<Node> solutionSet;
@@ -15,7 +16,6 @@ pq::updatable_priority_queue<Node, uint32_t> solutionNodeSingleResponsibilities;
 uint32_t m;
 
 namespace AdaptiveGreedy {
-    std::atomic<bool> sigterm_received(false);
     std::unordered_set<Node> calculateSolution(NumNodes& n, NumEdges& m, std::vector<std::vector<Node>>& setSystem) {
 #if _DEBUG
         std::cout << "(using adaptive greedy algorithm...)" << std::endl;
@@ -27,10 +27,10 @@ namespace AdaptiveGreedy {
 
         hypergraph.reset(n, m, setSystem); // O(n * log n + m * deg_edge)
 
-        while (!hypergraph.isEmpty() && !sigterm_received) { // O(1)
-            if (sigterm_received) break;
+        while (!hypergraph.isEmpty() && keep_running()) { // O(1)
             auto [highestImpact, highestImpactNode] = hypergraph.getHighestImpactNode(); // O(1)
             addToSolution(highestImpactNode); // O(deg_node * (deg_node + deg_edge * log n))
+            if (!keep_running()) break;
             shrinkSolutionIfApplicable(highestImpact); // O(n_sol + deg_node * deg_edge * log n)
         } // O(n? more? * ( deg_node^2 + deg_node * deg_edge * log n))
         
