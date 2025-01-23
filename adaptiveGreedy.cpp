@@ -4,119 +4,102 @@
 #include <sstream>
 #include "aliases.hpp"
 #include "adaptiveGreedy.hpp"
+#include "hypergraph.hpp"
+
+Hypergraph hypergraph;
+std::unordered_set<Node> solutionSet;
+std::vector<std::vector<EdgeIndex>> edgesHitByNode; // alternative to checking for inclusion in solutionSet in addition to hypergraph.getIncidentEdgeIndizes(node)
+std::vector<std::vector<EdgeIndex>> edgesOnlyHitByNode; // maybe unnecessary?
+std::vector<std::vector<Node>> nodesHittingEdge;
+pq::updatable_priority_queue<Node, uint32_t> solutionNodeSingleResponsibilities;
+uint32_t m;
 
 namespace AdaptiveGreedy {
     std::atomic<bool> sigterm_received(false);
-
-    std::vector<Node> calculateSolution(NumNodes& n, NumEdges& m, std::vector<std::vector<Node>>& setSystem) {
+    std::unordered_set<Node> calculateSolution(NumNodes& n, NumEdges& m, std::vector<std::vector<Node>>& setSystem) {
 #if _DEBUG
         std::cout << "(using adaptive greedy algorithm...)" << std::endl;
 #endif
+        ::m = m;
+        edgesHitByNode.resize(n + 1);
+        edgesOnlyHitByNode.resize(n + 1);
+        nodesHittingEdge.resize(m);
 
-        std::vector<std::vector<Node>> removedEdges;
-        std::vector<std::vector<Node>> recentlyRemovedEdges;
-        std::vector<std::vector<Node>> recentlyAddedEdges;
-        pq::updatable_priority_queue<Node, uint32_t> count;
-        updateCount(count, setSystem, recentlyRemovedEdges); // O(n * m * log n)
-        std::vector<Node> solutionSet;
+        hypergraph.reset(n, m, setSystem); // O(n * log n + m * deg_edge)
 
-        while (!setSystem.empty() && !sigterm_received) { // O(1)
-            updateCount(count, recentlyAddedEdges, recentlyRemovedEdges); // O(??? * log n)
-            auto [majorityNodeGain, majorityNode] = count.top(); // O(1)
-            solutionSet.push_back(majorityNode); // O(1)
+        while (!hypergraph.isEmpty() && !sigterm_received) { // O(1)
             if (sigterm_received) break;
-            recentlyRemovedEdges = removeEdgesContainingNode(majorityNode, setSystem, removedEdges); // O(n * m), wenn man edges als sets implementiert, wird das O(log n * m)...
-            if (sigterm_received) break;
-            recentlyAddedEdges = shrinkSolutionIfApplicable(n, solutionSet, removedEdges, majorityNodeGain, setSystem);
-        } // und das alles noch mal O(n)
+            auto [highestImpact, highestImpactNode] = hypergraph.getHighestImpactNode(); // O(1)
+            addToSolution(highestImpactNode); // O(deg_node * (deg_node + deg_edge * log n))
+            shrinkSolutionIfApplicable(highestImpact); // O(n_sol + deg_node * deg_edge * log n)
+        } // O(n? more? * ( deg_node^2 + deg_node * deg_edge * log n))
+        
 
         return solutionSet;
     }
 
-    void updateCount(pq::updatable_priority_queue<Node, uint32_t>& count, const std::vector<std::vector<Node>>& recentlyAddedEdges, const std::vector<std::vector<Node>>& recentlyRemovedEdges) {
-        for (auto&& edge : recentlyAddedEdges) {
-            for (Node node : edge) {
-                count.update(node, count.get_priority(node).second + 1); // increment priority
+    void addToSolution(Node node) {
+        solutionSet.insert(node);
+        edgesHitByNode[node] = hypergraph.getIncidentEdgeIndizes(node); // O(1)
+
+        for (EdgeIndex edgeIndex : edgesHitByNode[node]) {
+            nodesHittingEdge[edgeIndex].push_back(node);
+            if (nodesHittingEdge[edgeIndex].size() == 1) {
+                addToEdgesOnlyHitByNode(node, edgeIndex); // O(log n)
             }
-        }
-        for (auto&& edge : recentlyRemovedEdges) {
-            for (Node node : edge) {
-                count.update(node, count.get_priority(node).second - 1); // decrement priority
+            else if (nodesHittingEdge[edgeIndex].size() == 2) {
+                Node otherNode = nodesHittingEdge[edgeIndex][0];
+                edgesOnlyHitByNode[otherNode].erase(
+                    std::remove(edgesOnlyHitByNode[otherNode].begin(), edgesOnlyHitByNode[otherNode].end(), edgeIndex),
+                    edgesOnlyHitByNode[otherNode].end()
+                ); // O(deg_node)
+                solutionNodeSingleResponsibilities.update(otherNode, solutionNodeSingleResponsibilities.get_priority(otherNode).second + 1); // again plus because we want a min queue; O(log n)
             }
-        }
+        } // O(deg_node * (log n + deg_node))
+        
+        hypergraph.deleteEdgesContainingNode(node); // O(deg_node * deg_edge * log n)
     }
 
-    std::vector<std::vector<Node>> shrinkSolutionIfApplicable(const NumNodes n, std::vector<Node>& solutionSet, std::vector<std::vector<Node>>& removedEdges, uint32_t majorityNodeGain, std::vector<std::vector<Node>>& setSystem) {
-        Node minorityNode;
-        size_t minorityNodeLoss = removedEdges.size();
-        std::vector<std::vector<Node>> recentlyAddedEdges;
-        std::vector<std::vector<Node>> removedEdgesForNode;
-        std::vector<std::vector<Node>> removedEdgesForMinorityNode;
-
-        for (Node node : solutionSet) { // For every node in solutionSet check what happens when deleted. 
-            removedEdgesForNode = std::vector<std::vector<Node>>();
-            bool containsOtherNodesFromSolution = false;
-            // Take all previously removed edges that contain the node ...
-            for (auto&& edge : removedEdges) {
-                if (std::find(edge.begin(), edge.end(), node) != edge.end()) {
-                    // ... but dont contain another node from solutionSet.
-                    for (Node otherNode : solutionSet) {
-                        if (otherNode == node) {
-                            continue;
-                        }
-                        if (std::find(edge.begin(), edge.end(), otherNode) != edge.end()) {
-                            containsOtherNodesFromSolution = true;
-                        }
-                    }
-                    if (!containsOtherNodesFromSolution) {
-                        removedEdgesForNode.push_back(edge);
-                    }
-                    containsOtherNodesFromSolution = false;
-                }
-            }
-
-            // We only care for the smallest loss.
-            if (removedEdgesForNode.size() < minorityNodeLoss) {
-                minorityNode = node;
-                minorityNodeLoss = removedEdgesForNode.size();
-                removedEdgesForMinorityNode = removedEdgesForNode;
-            }
+    void removeFromSolution(Node node) {
+        auto it = std::find(solutionSet.begin(), solutionSet.end(), node); // O(n_sol)
+        if (it != solutionSet.end()) {
+            solutionSet.erase(it);
         }
-        // If exchanging minorityNode for majorityNode would be a net gain ...
-        if (minorityNodeLoss < majorityNodeGain) {
-            // ... erase minorityNode from the solution.
-            auto it = std::find(solutionSet.begin(), solutionSet.end(), minorityNode);
-            if (it != solutionSet.end()) {
-                solutionSet.erase(it);
+        for (EdgeIndex edgeIndex : edgesHitByNode[node]) {
+            nodesHittingEdge[edgeIndex].erase(std::find(nodesHittingEdge[edgeIndex].begin(), nodesHittingEdge[edgeIndex].end(), node)); // O(deg_edge)
+            if (nodesHittingEdge[edgeIndex].size() == 1) {
+                Node otherNode = nodesHittingEdge[edgeIndex][0];
+                addToEdgesOnlyHitByNode(otherNode, edgeIndex); // O(log n)
             }
-            for (auto& edge : removedEdgesForMinorityNode) {
-                auto it = std::find(removedEdges.begin(), removedEdges.end(), edge);
-                if (it != removedEdges.end()) {
-                    removedEdges.erase(it);
-                    recentlyAddedEdges.push_back(edge);
-                }
-                setSystem.push_back(edge);
+            if (nodesHittingEdge[edgeIndex].size() == 0) {
+                hypergraph.addEdge(edgeIndex); // O(deg_edge) * O(log n)
             }
-        }
+        } // O(n_sol) + O(deg_node) * O(deg_edge) * O(log n)
 
-        return recentlyAddedEdges;
+        clearEdgesHitByNode(node); // O(deg_node)
     }
 
-    std::vector<std::vector<Node>>& removeEdgesContainingNode(Node node, std::vector<std::vector<Node>>& setSystem, std::vector<std::vector<Node>>& removedEdges) {
-        std::vector<std::vector<Node>> recentlyRemovedEdges;
+    void shrinkSolutionIfApplicable(uint32_t highestImpact) {
+        Node leastImpactfulSolutionNode = solutionNodeSingleResponsibilities.top().key;
+        int32_t lowestImpact = solutionNodeSingleResponsibilities.top().priority - m;
 
-        setSystem.erase(
-            std::remove_if(setSystem.begin(), setSystem.end(),
-                [&](auto& edge) {
-                    if (std::find(edge.begin(), edge.end(), node) != edge.end()) {
-                        recentlyRemovedEdges.push_back(edge);
-                        removedEdges.push_back(std::move(edge));
-                        return true; // Mark for removal
-                    }
-                    return false;
-                }),
-            setSystem.end());
+        if (-lowestImpact < highestImpact) {
+            removeFromSolution(leastImpactfulSolutionNode); // O(n_sol + deg_node * deg_edge * log n)
+        }
+    }
+}
 
-        return recentlyRemovedEdges;
+namespace {
+    void addToEdgesOnlyHitByNode(Node node, EdgeIndex edgeIndex) {
+        edgesOnlyHitByNode[node].push_back(edgeIndex); // O(1)
+        solutionNodeSingleResponsibilities.set(node, m - 1, solutionNodeSingleResponsibilities.get_priority(node).second - 1); // minus because we want a min queue, so this node gets MORE impact and + m because the pq can only handle uint types, making m the "new 0"; O(log n)
+    }
+
+    void clearEdgesHitByNode(Node node) {
+        edgesHitByNode[node].clear(); // O(deg_node)
+        edgesOnlyHitByNode[node].clear(); // O(deg_node)
+        if (solutionNodeSingleResponsibilities.top().key == node) {
+            solutionNodeSingleResponsibilities.pop();
+        }
     }
 }

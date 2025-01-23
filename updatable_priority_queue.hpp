@@ -15,6 +15,11 @@ namespace pq {
 			friend bool operator>(const priority_queue_node& pqn1, const priority_queue_node& pqn2) {
 				return pqn1.priority > pqn2.priority;
 			}
+
+			// conversion
+			operator std::pair<Priority, Key>() const {
+				return { priority, key };
+			}
 		};
 
 	/** Key has to be an uint value (convertible to size_t)
@@ -61,11 +66,11 @@ namespace pq {
 				/** Sets the priority for the given key. If not present, it will be added, otherwise it will be updated
 				 *  Returns true if the priority was changed.
 				 * */
-				bool set(const Key& key, const Priority& priority, bool only_if_higher=false) {
-					if(key < id_to_heappos.size() && id_to_heappos[key] < ((size_t)-2)) // This key is already in the pQ
-						return update(key, priority, only_if_higher);
+				bool set(const Key& key, const Priority& firstPriority, const Priority& updatePriority, bool only_if_higher = false) {
+					if (key < id_to_heappos.size() && id_to_heappos[key] < ((size_t)-2)) // This key is already in the pQ
+						return update(key, updatePriority, only_if_higher);
 					else
-						return push(key, priority, only_if_higher);
+						return push(key, firstPriority, only_if_higher);
 				}
 
 				std::pair<bool,Priority> get_priority(const Key& key) {
