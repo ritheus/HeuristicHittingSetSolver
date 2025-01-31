@@ -31,37 +31,54 @@ std::string toString(const std::unordered_set<Node>& set) {
     return ss.str();
 }
 
-std::tuple<NumNodes, NumEdges, std::vector<std::vector<Node>>> parseInputStream(std::basic_istream<char>& input) {
-    std::istringstream ss;
+std::tuple<NumNodes, NumEdges, std::vector<std::vector<Node>>> parseInputStream(std::istream& input) {
     std::vector<std::vector<Node>> setSystem;
     NumNodes n = 0;
     NumEdges m = 0;
 
-    std::string line;
-    while (std::getline(input, line)) {
-        if (line.empty()) continue;
-        if (line[0] == 'c') {
-            continue;
+    const size_t BUFFER_SIZE = 8192; // 8 kb block size
+    std::vector<char> buffer(BUFFER_SIZE);
+    std::string leftover; // Prefix of lines that exceed the buffer size
+
+    while (input.read(buffer.data(), BUFFER_SIZE) || input.gcount() > 0) {
+        size_t bytesRead = input.gcount();
+        std::string chunk(buffer.data(), bytesRead);
+
+        if (!leftover.empty()) {
+            chunk = leftover + chunk;
+            leftover.clear();
         }
-        else if (line[0] == 'p') {
-            std::tie(n, m) = getSetSystemParameters(line);
-            if (n <= 0 || m <= 0) {
-                std::cerr << "setSystemParameters konnten nicht ermittelt werden." << std::endl;
+
+        size_t pos = 0;
+        size_t lastNewline = 0;
+        while ((pos = chunk.find('\n', lastNewline)) != std::string::npos) {
+            std::string line = chunk.substr(lastNewline, pos - lastNewline);
+            lastNewline = pos + 1; // Next line
+
+            if (line.empty() || line[0] == 'c') continue;
+
+            if (line[0] == 'p') {
+                std::tie(n, m) = getSetSystemParameters(line);
+                if (n <= 0 || m <= 0) {
+                    std::cerr << "setSystemParameters konnten nicht ermittelt werden." << std::endl;
+                }
+            }
+            else {
+                setSystem.emplace_back(getAllNodesFromEdge(line));
             }
         }
-        else {
-            setSystem.push_back(getAllNodesFromEdge(line, ss));
+
+        // Save prefix of line exceeding block size
+        if (lastNewline < chunk.size()) {
+            leftover = chunk.substr(lastNewline);
         }
     }
 
-    return {n, m, std::move(setSystem)};
+    return { n, m, std::move(setSystem) };
 }
 
 std::tuple<NumNodes, NumEdges, std::vector<std::vector<Node>>> parseInputFile(const std::string& inputFileName) {
     std::istringstream ss;
-    std::vector<std::vector<Node>> setSystem;
-    NumNodes n = 0;
-    NumEdges m = 0;
 
     std::ifstream inputFile(inputFileName);
     if (inputFile.is_open()) {
@@ -74,11 +91,19 @@ std::tuple<NumNodes, NumEdges, std::vector<std::vector<Node>>> parseStdIn() {
 }
 
 void writeToStdOut(const std::unordered_set<Node>& solution) {
-    std::cout << solution.size() << '\n';
+    std::string buffer;
+    buffer.reserve(solution.size() * 6 + 10); // heuristic: <=6 chars per node (inkl. '\n')
+
+    // n
+    buffer += std::to_string(solution.size()) + '\n';
+
+    // write all nodes into buffer
     for (Node node : solution) {
-        std::cout << node << '\n';
+        buffer += std::to_string(node) + '\n';
     }
-    std::cout << std::flush;
+
+    std::cout.write(buffer.data(), buffer.size());
+    std::cout.flush();
 }
 
 std::tuple<NumNodes, NumEdges> getSetSystemParameters(const std::string& s) {
@@ -109,11 +134,22 @@ std::tuple<NumNodes, NumEdges> getSetSystemParameters(const std::string& s) {
  * **Example Input:**
  * "7 14 18 22 26 29 32"
  */
-std::vector<Node> getAllNodesFromEdge(const std::string& edge, std::istringstream& iss) {
-    iss.clear();
-    iss.str(edge);
+std::vector<Node> getAllNodesFromEdge(const std::string& edge) {
+    std::vector<Node> values;
+    values.reserve(edge.size() / 2);  // Estimate number of nodes in edge
 
-    std::vector<Node> values((std::istream_iterator<Node>(iss)), std::istream_iterator<Node>());
+    const char* str = edge.c_str();
+    char* end;
+
+    while (*str) {
+        while (*str == ' ') ++str;  // Skip spaces
+        if (*str == '\0') break;
+
+        Node num = static_cast<Node>(std::strtoul(str, &end, 10));
+        values.emplace_back(num);
+
+        str = end;  // Next character
+    }
 
     return values;
 }
