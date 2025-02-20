@@ -117,6 +117,33 @@ namespace pq {
 					return false;
 				}
 
+				bool remove(const Key& key) {
+					if (key >= id_to_heappos.size()) return false;
+					size_t heappos = id_to_heappos[key];
+					if (heappos >= static_cast<size_t>(-2)) return false; 
+
+					id_to_heappos[key] = -1;
+
+					size_t last_pos = heap.size() - 1;
+					if (heappos != last_pos) {
+						std::swap(heap[heappos], heap[last_pos]);
+						id_to_heappos[heap[heappos].key] = heappos;
+					}
+
+					heap.pop_back();
+
+					if (heappos != last_pos && !heap.empty()) {
+						if (heappos > 0 && heap[heappos] > heap[(heappos - 1) / 2]) {
+							sift_up(heappos);
+						}
+						else {
+							sift_down(heappos);
+						}
+					}
+
+					return true;
+				}
+
 			private:
 				void extend_ids(Key k) {
 					size_t new_size = k+1;

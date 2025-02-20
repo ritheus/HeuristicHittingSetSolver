@@ -1,6 +1,8 @@
 #include "utils.hpp"
 #include "adaptiveGreedy.hpp"
+#include "adaptiveGreedyState.hpp"
 #include "greedy.hpp"
+#include "greedyState.hpp"
 #include "sigtermHandler.hpp"
 #include <iostream>
 #include <fstream>
@@ -8,10 +10,9 @@
 int main(int argc, char *argv[]) {
 #if _DEBUG
     argc = 3;
-    const char* fakeArgv[] = { argv[0], "adaptiveGreedy", "bremen_subgraph_20.hgr"};
+    const char* fakeArgv[] = { argv[0], "greedy", "bremen_subgraph_20.hgr"};
     argv = const_cast<char**>(fakeArgv);
 #endif
-
     bool useGreedy = false;
     bool useAdaptiveGreedy = false;
     if (strcmp(argv[1], "greedy") == 0) {
@@ -29,7 +30,7 @@ int main(int argc, char *argv[]) {
         result = parseInputStream(inputFile);
     }
     else {
-        std::cout << "File couldnt be read!" << std::endl;
+        std::cerr << "File couldnt be read!" << std::endl;
         result = parseInputStream(std::cin);
     }
     auto [n, m, setSystem] = result;
@@ -43,10 +44,15 @@ int main(int argc, char *argv[]) {
     // Berechnung
     std::unordered_set<Node> solution;
     if (useGreedy) {
-        solution = Greedy::calculateSolution(n, m, setSystem);
+        GreedyState state = GreedyState(n, m, setSystem); // O(n * log n + m * deg_edge)
+        solution = Greedy::calculateSolution(state);
     }
     else if (useAdaptiveGreedy) {
-        solution = AdaptiveGreedy::calculateSolution(n, m, setSystem);
+        AdaptiveGreedyState state = AdaptiveGreedyState(n, m, setSystem);
+        solution = AdaptiveGreedy::calculateSolution(state);
+    }
+    else {
+        throw std::runtime_error("Es wurde kein Algorithmus ausgewählt.");
     }
 
     // Lösung in stdout ausgeben
