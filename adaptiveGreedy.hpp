@@ -3,18 +3,11 @@
 #include "aliases.hpp"
 #include "updatable_priority_queue.hpp"
 #include "hypergraph.hpp"
+#include "adaptiveGreedyState.hpp"
 #include <vector>
 #include <unordered_set>
 #include <atomic>
 
-
 namespace AdaptiveGreedy {
-	std::unordered_set<Node> calculateSolution(NumNodes&, NumEdges&, std::vector<std::vector<Node>>&);
-	void addToSolution(Node node);
-	void shrinkSolutionIfApplicable(uint32_t);
-}
-
-namespace {
-	void addToEdgesOnlyHitByNode(Node, EdgeIndex);
-	void clearEdgesHitByNode(Node node);
+	std::unordered_set<Node> calculateSolution(AdaptiveGreedyState&);
 }
