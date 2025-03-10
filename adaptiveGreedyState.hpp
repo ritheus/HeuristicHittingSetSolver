@@ -75,24 +75,26 @@ public:
                 addToEdgesOnlyHitByNode(otherNode, edgeIndex); // O(log n)
             }
             if (nodesHittingEdge[edgeIndex].size() == 0) {
-                if (hypergraph.addEdge(edgeIndex)) { // O(deg_edge) * O(log n)
+                if (hypergraph.addEdge(edgeIndex)) { // O(1)
                     for (Node node : hypergraph.nodesIncidentToEdge[edgeIndex]) {
                         updateImpact(node, getImpact(node) + 1); // increment potential impact; O(log n)
                     } // O(deg_edge * log n)
                 }
             }
-        } // O(n_sol) + O(deg_node) * O(deg_edge) * O(log n)
+        } // O(deg_node) * O(deg_edge) * O(log n)
 
         clearEdgesHitByNode(node); // O(deg_node)
     }
 
-    void shrinkSolutionIfApplicable(uint32_t highestImpact) {
+    bool shrinkSolutionIfApplicable(uint32_t highestImpact) {
         Node leastImpactfulSolutionNode = solutionNodeSingleResponsibilities.top().key;
         int32_t lowestImpact = solutionNodeSingleResponsibilities.top().priority - m;
 
         if (-lowestImpact < highestImpact) {
             removeFromSolution(leastImpactfulSolutionNode); // O(n_sol + deg_node * deg_edge * log n)
+            return true;
         }
+        return false;
     }
 
     void addToEdgesOnlyHitByNode(Node node, EdgeIndex edgeIndex) {

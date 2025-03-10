@@ -13,12 +13,18 @@ namespace AdaptiveGreedy {
 #if _DEBUG
         std::cout << "(using adaptive greedy algorithm...)" << std::endl;
 #endif
+        uint32_t switches = 0;
+
         while (!state.hypergraph.isEmpty() && keep_running()) { // O(1)
             auto [highestImpact, highestImpactNode] = state.getHighestImpactNode(); // O(1)
             state.addToSolution(highestImpactNode); // O(deg_node * (deg_node + deg_edge * log n))
-            state.shrinkSolutionIfApplicable(highestImpact); // O(n_sol + deg_node * deg_edge * log n)
+            if (state.shrinkSolutionIfApplicable(highestImpact)) { // O(deg_node * deg_edge * log n)
+                switches++;
+            }
         } // O(n? more? * ( deg_node^2 + deg_node * deg_edge * log n))
         
+        std::cerr << switches << std::endl;
+
         return state.solutionSet;
     }
 }
