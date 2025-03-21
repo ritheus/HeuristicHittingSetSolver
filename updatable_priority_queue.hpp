@@ -144,6 +144,11 @@ namespace pq {
 					return true;
 				}
 
+				void reserve(size_t n) {
+					heap.reserve(n);
+					id_to_heappos.reserve(n);
+				}
+
 			private:
 				void extend_ids(Key k) {
 					size_t new_size = k+1;

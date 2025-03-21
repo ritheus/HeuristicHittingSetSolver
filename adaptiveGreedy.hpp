@@ -4,10 +4,12 @@
 #include "updatable_priority_queue.hpp"
 #include "hypergraph.hpp"
 #include "adaptiveGreedyState.hpp"
+#include "kernelization.hpp"
+#include "cxxopts.hpp"
 #include <vector>
 #include <unordered_set>
 #include <atomic>
 
 namespace AdaptiveGreedy {
-	std::unordered_set<Node> calculateSolution(AdaptiveGreedyState&);
+	std::unordered_set<Node> calculateSolution(AdaptiveGreedyState&, cxxopts::ParseResult&);
 }
