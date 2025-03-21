@@ -1,37 +1,46 @@
 #pragma once
 
 #include "hypergraph.hpp"
+#include "solution.hpp"
+#include "algorithmState.hpp"
 
-struct GreedyState {
-private:
-
+struct GreedyState : AlgorithmState {
 public:
-	Hypergraph hypergraph;
-	std::unordered_set<Node> solutionSet;
-	NumEdges m;
-	pq::updatable_priority_queue<Node, uint32_t> potentialNodeImpact; // Speicher reservieren?
+	pq::updatable_priority_queue<Node, uint32_t> potentialNodeImpact;
 
-	GreedyState() {}
-
-	GreedyState(NumNodes n, NumEdges m, std::vector<std::vector<Node>>& setSystem) {
-		this->m = m;
-		hypergraph = Hypergraph(n, m, setSystem); // O(n * log n + m * deg_edge)
-		// set potentialNodeImpact
-		for (EdgeIndex edgeIndex = 0; edgeIndex < hypergraph.nodesIncidentToEdge.size(); edgeIndex++) {
-			for (Node node : hypergraph.nodesIncidentToEdge[edgeIndex]) {
-				hypergraph.edgesIncidentToNode[node].push_back(edgeIndex);
-			} // O(deg_edge)
-		} // O(m * deg_edge)
-		for (uint32_t i = 1; i <= n; i++) {
-			potentialNodeImpact.push(i, hypergraph.edgesIncidentToNode[i].size()); // O(log n)
+	GreedyState(NumNodes n, NumEdges m, std::vector<Edge>&& setSystem) : AlgorithmState(n, m, std::move(setSystem)) { // O(n * log n + m * deg_edge)
+		potentialNodeImpact.reserve(n);
+		for (Node node : hypergraph.getNodes()) {
+			potentialNodeImpact.push(node, hypergraph.getIncidentEdgeIndizes(node).size()); // O(log n)
 		} // O(n * log n)
 	}
 
-	void deleteEdgesContainingNode(Node node) {
-		for (EdgeIndex edgeIndex : hypergraph.edgesIncidentToNode[node]) {
-			if (hypergraph.deleteEdge(edgeIndex)) { // O(deg_edge * log n)
-				for (Node node : hypergraph.nodesIncidentToEdge[edgeIndex]) {
-					updateImpact(node, getImpact(node) - 1); // decrement potential impact; O(log n)
+	void deleteNodes(const std::vector<Node>& nodesToRemove) override {
+		for (const Node node : nodesToRemove) {
+			potentialNodeImpact.remove(node);
+		}
+
+		hypergraph.deleteNodes(nodesToRemove);
+	}
+
+	void deleteEdges(std::vector<EdgeIndex>& edgeIndizesToRemove) override {
+		for (EdgeIndex edgeIndexToRemove : edgeIndizesToRemove) {
+			for (Node node : hypergraph.getEdge(edgeIndexToRemove)) {
+				updateImpact(node, getImpact(node) - 1);
+			}
+		}
+		hypergraph.deleteEdges(edgeIndizesToRemove);
+	}
+
+	/**
+	*	Adds the given node to the solution, marks the incident edges as hit and updates the potential impact of all incident edges.
+	*/
+	void addToSolution(Node node) override {
+		solution.insert(node);
+		for (EdgeIndex edgeIndex : hypergraph.getIncidentEdgeIndizes(node)) {
+			if (hypergraph.setEdgeHit(edgeIndex)) { // O(deg_edge * log n)
+				for (Node adjacentNode : hypergraph.getEdge(edgeIndex)) {
+					updateImpact(adjacentNode, getImpact(adjacentNode) - 1); // decrement potential impact; O(log n)
 				} // O(deg_edge * log n)
 			}
 		} // O(deg_node * deg_edge * log n)

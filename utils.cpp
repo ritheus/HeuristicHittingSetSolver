@@ -74,6 +74,10 @@ std::tuple<NumNodes, NumEdges, std::vector<std::vector<Node>>> parseInputStream(
         }
     }
 
+    if (!leftover.empty()) {
+        setSystem.emplace_back(getAllNodesFromEdge(leftover));
+    }
+
     return { n, m, std::move(setSystem) };
 }
 

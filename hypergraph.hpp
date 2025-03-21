@@ -1,77 +1,89 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "logger.hpp"
 #include <unordered_set>
+#include <numeric>
+#include <algorithm>
 
 struct Hypergraph {
+private:
+    std::vector<std::vector<Node>> edges;
+    std::vector<std::vector<EdgeIndex>> incidentEdgeIndizes;
+    std::vector<Node> activeNodes;
+    uint32_t maximumEdgeDegree = 0;
+    uint32_t maximumVertexDegree = 0;
+    std::vector<bool> edgeHitFlags;
+    NumEdges numUnhitEdges;
+    NumEdges numHitEdges;
+
 public:
-    uint32_t n;
-    uint32_t m;
-    std::vector<bool> edgeDeletedFlags;
-    uint32_t numUnhitEdges;
-    uint32_t numHitEdges;
-    std::vector<std::vector<Node>> nodesIncidentToEdge;
-    std::vector<std::vector<EdgeIndex>> edgesIncidentToNode;
+    NumNodes n;
+    NumEdges m;
 
-    Hypergraph() {}
-
-    Hypergraph(NumNodes n, NumNodes m, std::vector<Edge>& setSystem) {
-        this->n = n;
-        this->m = m;
-        this->nodesIncidentToEdge = std::move(setSystem);
-        edgeDeletedFlags.assign(this->nodesIncidentToEdge.size(), false);
-        edgesIncidentToNode.clear();
-        edgesIncidentToNode.resize(n + 1); // n+1 because the given format enumerates nodes beginning with 1 and i dont want to deal with conversion
+    Hypergraph(NumNodes n, NumNodes m, std::vector<Edge>&& setSystem) : n(n), m(m), edges(std::move(setSystem)) {
+        edgeHitFlags.assign(this->edges.size(), false);
+        incidentEdgeIndizes.resize(n + 1); // n+1 because the given format enumerates nodes beginning with 1 and I dont want to deal with conversion
+        activeNodes.resize(n + 1);
+        std::iota(activeNodes.begin(), activeNodes.end(), 0);
         numUnhitEdges = m;
         numHitEdges = 0;
-    }
-
-    Hypergraph(NumNodes n, NumNodes m, std::vector<Edge>& setSystem, uint32_t FAKE) {
-        this->n = n;
-        this->m = m;
-        this->nodesIncidentToEdge = std::move(setSystem);
-        edgeDeletedFlags.assign(this->nodesIncidentToEdge.size(), false);
-        edgesIncidentToNode.clear();
-        edgesIncidentToNode.resize(n + 1); // n+1 because the given format enumerates nodes beginning with 1 and i dont want to deal with conversion
-        numUnhitEdges = m;
-        numHitEdges = 0;
-        for (EdgeIndex edgeIndex = 0; edgeIndex < nodesIncidentToEdge.size(); edgeIndex++) {
-            for (Node node : nodesIncidentToEdge[edgeIndex]) {
-                edgesIncidentToNode[node].push_back(edgeIndex);
+        for (EdgeIndex edgeIndex = 0; edgeIndex < edges.size(); edgeIndex++) {
+            for (Node node : edges[edgeIndex]) {
+                incidentEdgeIndizes[node].push_back(edgeIndex);
             } // O(deg_edge)
+            if (edges[edgeIndex].size() > maximumEdgeDegree) {
+                maximumEdgeDegree = edges[edgeIndex].size();
+            }
         } // O(m * deg_edge)
+        for (Node node : activeNodes) {
+            if (incidentEdgeIndizes[node].size() > maximumVertexDegree) {
+                maximumVertexDegree = incidentEdgeIndizes[node].size();
+            }
+        } // O(n)
     }
 
-    Edge getEdge(EdgeIndex edgeIndex) {
-        return nodesIncidentToEdge[edgeIndex];
+    const std::vector<Edge> getSubedgesOfDegree(uint32_t d) const {
+        std::vector<Edge> subedges;
+
+        for (EdgeIndex edgeIndex = 0; edgeIndex < edges.size(); edgeIndex++) {
+            const Edge& edge = getEdge(edgeIndex);
+
+            if (edge.size() < d) continue;
+
+            std::vector<size_t> indices(edge.size());
+            std::iota(indices.begin(), indices.end(), 0);
+
+            // Choose all d element combinations
+            std::vector<bool> bitmask(edge.size(), false);
+            std::fill(bitmask.begin(), bitmask.begin() + d, true);
+            do {
+                Edge subedge;
+                for (size_t i = 0; i < edge.size(); ++i) {
+                    if (bitmask[i]) {
+                        subedge.push_back(edge[i]);
+                    }
+                }
+                subedges.push_back(std::move(subedge));
+            } while (std::prev_permutation(bitmask.begin(), bitmask.end()));
+        }
+
+        return subedges;
     }
 
-    std::vector<EdgeIndex> getIncidentEdgeIndizes(Node node) {
-        return edgesIncidentToNode[node];
-    }
-
-    /**
-        Deletes an edge given by edgeIndex.
-
-        It does not alter the underlying nodesIncidentToEdge or edgesIncidentToNode. It merely flips the corresponding bool in the edgeDeletedFlags vector.
-        
-        @return true if the edge existed and got deleted by this invokation and false otherwise
-    */
-    bool deleteEdge(EdgeIndex edgeIndex) {
-        if (edgeDeletedFlags[edgeIndex] == false) {
-            edgeDeletedFlags[edgeIndex] = true;
+    bool setEdgeHit(EdgeIndex edgeIndex) {
+        if (edgeHitFlags[edgeIndex] == false) {
+            edgeHitFlags[edgeIndex] = true;
             numUnhitEdges--;
             numHitEdges++;
             return true;
         }
-        else {
-            return false;
-        }
+        return false;
     }
 
-    bool addEdge(EdgeIndex edgeIndex) {
-        if (edgeDeletedFlags[edgeIndex] == true) {
-            edgeDeletedFlags[edgeIndex] = false;
+    bool setEdgeUnhit(EdgeIndex edgeIndex) {
+        if (edgeHitFlags[edgeIndex] == true) {
+            edgeHitFlags[edgeIndex] = false;
             numUnhitEdges++;
             numHitEdges--;
             return true;
@@ -81,7 +93,226 @@ public:
         }
     }
 
-    bool isEmpty() {
-        return numUnhitEdges<=0;
+    void addEdge(const Edge& edge) {
+		edges.push_back(edge);
+        if (edge.size() > maximumEdgeDegree) {
+			maximumEdgeDegree = edge.size();
+		}
+		for (Node node : edge) {
+			incidentEdgeIndizes[node].push_back(edges.size() - 1);
+            if (incidentEdgeIndizes[node].size() > maximumVertexDegree) {
+                maximumVertexDegree = incidentEdgeIndizes[node].size();
+            }
+		}
+        m++;
+		numUnhitEdges++;
+    }
+
+    void deleteFromIncidentEdgeIndizes(EdgeIndex deletedEdgeIndex) {
+		for (Node node : edges[deletedEdgeIndex]) {
+			auto& incident = incidentEdgeIndizes[node];
+			auto it = std::find(incident.begin(), incident.end(), deletedEdgeIndex);
+			if (it != incident.end()) {
+				incident.erase(it);
+			}
+		}
+    }
+
+    void removeEdgeReferencesFromNodes(EdgeIndex deletedEdgeIndex, bool& recalculateVertexDegree) {
+        for (Node node : edges[deletedEdgeIndex]) {
+            auto& incident = incidentEdgeIndizes[node];
+            auto it = std::find(incident.begin(), incident.end(), deletedEdgeIndex);
+            if (it != incident.end()) {
+                incident.erase(it);
+                if (incident.size() == maximumVertexDegree) {
+                    recalculateVertexDegree = true;
+                }
+            }
+        }
+    }
+
+    void swapEdges(EdgeIndex toBeRemoved, EdgeIndex lastIndex) {
+        // Update edge index for swapped edge in incidentEdgeIndizes
+        for (Node node : edges[lastIndex]) {
+            auto& incident = incidentEdgeIndizes[node];
+            auto it = std::find(incident.begin(), incident.end(), lastIndex);
+            if (it != incident.end()) {
+                *it = toBeRemoved;
+            }
+        }
+
+        std::swap(edges[toBeRemoved], edges[lastIndex]);
+        bool tmp = edgeHitFlags[toBeRemoved]; // std::swap doesn't work with std::vector<bool>
+        edgeHitFlags[toBeRemoved] = edgeHitFlags[lastIndex];
+        edgeHitFlags[lastIndex] = tmp;
+    }
+
+    void deleteEdge(EdgeIndex edgeIndex, bool& recalculateVertexDegree, bool& recalculateEdgeDegree) {
+        uint32_t lastIndex = edges.size() - 1;
+
+        if (edges[edgeIndex].size() == maximumEdgeDegree) {
+            recalculateEdgeDegree = true;
+        }
+
+        deleteFromIncidentEdgeIndizes(edgeIndex);
+
+        if (edgeIndex != lastIndex) { // Edge must be swapped with last edge
+            swapEdges(edgeIndex, lastIndex);
+        }
+
+        removeEdgeReferencesFromNodes(lastIndex, recalculateVertexDegree);
+
+        edges.pop_back();
+        if (edgeHitFlags.back())
+            numHitEdges--;
+        else
+            numUnhitEdges--;
+        edgeHitFlags.pop_back();
+        m--;
+
+        LOG("Deleted edge with index " << edgeIndex);
+    }
+
+    void deleteEdges(std::vector<EdgeIndex>& edgeIndizesToRemove) {
+        bool recalculateVertexDegree = false;
+        bool recalculateEdgeDegree = false;
+
+        std::sort(edgeIndizesToRemove.begin(), edgeIndizesToRemove.end(), std::greater<>());
+
+        for (EdgeIndex edgeIndex : edgeIndizesToRemove) {
+            deleteEdge(edgeIndex, recalculateVertexDegree, recalculateEdgeDegree);
+        }
+
+        if (recalculateVertexDegree) calculateMaximumVertexDegree();
+        if (recalculateEdgeDegree) calculateMaximumEdgeDegree();
+    }
+
+    void deleteNodes(const std::vector<Node>& nodesToRemove) {
+        std::unordered_set<Node> toRemove(nodesToRemove.begin(), nodesToRemove.end());
+        n -= toRemove.size();
+
+        std::vector<EdgeIndex> edgeIndizesToRemove;
+        bool recalcVertex = false;
+        bool recalcEdge = false;
+
+        for (Node node : toRemove) {
+            if (incidentEdgeIndizes[node].size() == maximumVertexDegree) {
+                recalcVertex = true;
+            }
+
+            for (EdgeIndex edgeIndex : incidentEdgeIndizes[node]) {
+                auto& edge = edges[edgeIndex];
+
+                if (edge.size() == maximumEdgeDegree)
+                    recalcEdge = true;
+
+                auto it = std::find(edge.begin(), edge.end(), node);
+                edge.erase(it);
+
+                if (edge.empty()) {
+                    edgeIndizesToRemove.push_back(edgeIndex);
+                }
+            }
+
+            incidentEdgeIndizes[node].clear();
+        }
+
+        activeNodes.erase(
+            std::remove_if(activeNodes.begin(), activeNodes.end(),
+                [&](Node n) { return toRemove.count(n); }),
+            activeNodes.end()
+        );
+
+        if (!edgeIndizesToRemove.empty()) {
+            deleteEdges(edgeIndizesToRemove);
+        }
+
+        if (recalcVertex) calculateMaximumVertexDegree();
+        if (recalcEdge) calculateMaximumEdgeDegree();
+    }
+
+
+    std::unordered_set<Node> getAdjacentNodes(Node node) const {
+        std::unordered_set<Node> adjacentNodes;
+        adjacentNodes.reserve(incidentEdgeIndizes[node].size() * maximumEdgeDegree);
+
+		for (EdgeIndex edgeIndex : incidentEdgeIndizes[node]) {
+            for (Node adjacentNode : edges[edgeIndex]) {
+				adjacentNodes.insert(adjacentNode);
+            }
+		}
+
+        return adjacentNodes;
+    }
+
+    const std::vector<Edge>& getEdges() const {
+        return edges;
+    }
+
+    const Edge& getEdge(EdgeIndex edgeIndex) const {
+        return edges[edgeIndex];
+    }
+
+    const std::vector<Node>& getNodes() const {
+        return activeNodes;
+    }
+
+    const std::vector<EdgeIndex>& getIncidentEdgeIndizes(Node node) const {
+        return incidentEdgeIndizes[node];
+    }
+
+    uint32_t getMaximumVertexDegree() const {
+        return maximumVertexDegree;
+    }
+
+    uint32_t getMaximumEdgeDegree() const {
+        return maximumEdgeDegree;
+    }
+
+    uint32_t getNumUnhitEdges() const {
+        return numUnhitEdges;
+    }
+
+    uint32_t getNumHitEdges() const {
+        return numHitEdges;
+    }
+
+    bool isEdgeHit(EdgeIndex edgeIndex) const {
+        return edgeHitFlags[edgeIndex];
+    }
+
+    bool isEmpty() const {
+        return numUnhitEdges==0;
+    }
+
+    void calculateMaximumVertexDegree() {
+        uint32_t oldMaximumVertexDegree = maximumVertexDegree;
+        maximumVertexDegree = 0;
+        for (Node node : activeNodes) {
+            if (incidentEdgeIndizes[node].size() > maximumVertexDegree) {
+                maximumVertexDegree = incidentEdgeIndizes[node].size();
+            }
+        }
+	}
+
+    void calculateMaximumEdgeDegree() {
+        uint32_t oldMaximumEdgeDegree = maximumEdgeDegree;
+        maximumEdgeDegree = 0;
+        for (Edge& edge : edges) {
+            if (edge.size() > maximumEdgeDegree) {
+                maximumEdgeDegree = edge.size();
+            }
+        }
+    }
+
+    template <typename T>
+    void removeByMask(std::vector<T>& vec, const std::vector<bool>& mask) {
+        vec.erase(
+            std::remove_if(vec.begin(), vec.end(),
+                [i = 0, &mask](auto&&) mutable {
+                    return mask[i++];
+                }),
+            vec.end()
+        );
     }
 };
