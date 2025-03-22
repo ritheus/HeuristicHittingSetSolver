@@ -1,7 +1,5 @@
 #include "utils.hpp"
-#include "adaptiveGreedy.hpp"
 #include "adaptiveGreedyState.hpp"
-#include "greedy.hpp"
 #include "greedyState.hpp"
 #include "kernelization.hpp"
 #include "sigtermHandler.hpp"
@@ -72,11 +70,11 @@ int main(int argc, char *argv[]) {
     std::unordered_set<Node> solution;
     if (algorithm == "greedy") {
         GreedyState state = GreedyState(n, m, std::move(setSystem)); // O(n * log n + m * deg_edge)
-        solution = Greedy::calculateSolution(state, optionsResult);
+        solution = state.calculateSolution(state, optionsResult);
     }
     else if (algorithm == "adaptivegreedy") {
         AdaptiveGreedyState state = AdaptiveGreedyState(n, m, std::move(setSystem));
-        solution = AdaptiveGreedy::calculateSolution(state, optionsResult);
+        solution = state.calculateSolution(state, optionsResult);
     }
     else {
         throw std::runtime_error("Es wurde kein Algorithmus ausgewählt.");
