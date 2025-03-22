@@ -8,10 +8,6 @@ namespace kernelization {
 		LOG("Applying kernelization rules...");
 		const bool all = optionsResult.count("kernelization_allRules") > 0;
 
-		if (all || optionsResult.count("kernelization_unitEdgeRule")) {
-			applyUnitEdgeRule(state);
-			LOG("UnitEdgeRule applied");
-		}
 		if (all || optionsResult.count("kernelization_vertexDominationRule")) {
 			applyVertexDominationRule(state);
 			LOG("VertexDominationRule applied");
@@ -23,6 +19,10 @@ namespace kernelization {
 		if (all || optionsResult.count("kernelization_criticalCoreRule")) {
 			applyCriticalCoreRule(state);
 			LOG("CriticalCoreRule applied");
+		}
+		if (all || optionsResult.count("kernelization_unitEdgeRule")) {
+			applyUnitEdgeRule(state);
+			LOG("UnitEdgeRule applied");
 		}
 	}
 
