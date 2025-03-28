@@ -5,6 +5,12 @@
 struct Solution {
 	std::unordered_set<Node> solutionSet;
 
+	Solution() {}
+
+	Solution(std::unordered_set<Node> solutionSet) {
+		this->solutionSet = solutionSet;
+	}
+
 	void insert(Node node) {
 		solutionSet.insert(node);
 	}
@@ -19,8 +25,16 @@ struct Solution {
 		}
 	}
 
+	bool contains(Node node) {
+		return solutionSet.find(node) != solutionSet.end();
+	}
+
 	std::unordered_set<Node>& getSolution() {
 		return solutionSet;
+	}
+
+	size_t size() {
+		return solutionSet.size();
 	}
 
 	bool empty() {

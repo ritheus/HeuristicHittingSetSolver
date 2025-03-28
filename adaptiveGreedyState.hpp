@@ -19,9 +19,9 @@ public:
     pq::updatable_priority_queue<Node, uint32_t> solutionNodeSingleResponsibilities;
     pq::updatable_priority_queue<Node, uint32_t> potentialNodeImpact;
 
-    AdaptiveGreedyState(NumNodes, NumEdges, std::vector<Edge>&&); // O(n * log n + m * deg_edge)
+    AdaptiveGreedyState(NumNodes, NumEdges, std::vector<Edge>&&, const cxxopts::ParseResult&); // O(n * log n + m * deg_edge)
 
-    std::unordered_set<Node> calculateSolution(AdaptiveGreedyState&, cxxopts::ParseResult&);
+    Solution calculateSolution(bool=true);
     void addToSolution(Node) override; // O(deg_node * deg_edge * log n)
     void removeFromSolution(Node);
     bool shrinkSolutionIfApplicable(uint32_t);

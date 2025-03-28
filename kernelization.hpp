@@ -6,17 +6,17 @@
 #include "cxxopts.hpp"
 
 namespace kernelization {
-	void applyKernelization(AlgorithmState& state, cxxopts::ParseResult& optionsResult);
+	bool applyKernelization(AlgorithmState& state, const cxxopts::ParseResult& optionsResult);
 
-	void applyUnitEdgeRule(AlgorithmState&);
-	void applyEdgeDominationRule(AlgorithmState&);
+	bool applyUnitEdgeRule(AlgorithmState&);
+	bool applyEdgeDominationRule(AlgorithmState&);
 	std::vector<EdgeIndex> findDominatedEdges(AlgorithmState&);
 	bool edgeDominatesEdge(const Edge&, const Edge&, EdgeIndex, EdgeIndex);
-	void applyVertexDominationRule(AlgorithmState&);
+	bool applyVertexDominationRule(AlgorithmState&);
 	std::unordered_set<Node> findDominatedNodes(AlgorithmState&);
 	bool nodeDominatesNode(Node, Node, AlgorithmState&);
 	void applyCrownDecompositionRule(AlgorithmState&);
-	void applyCriticalCoreRule(AlgorithmState&);
+	bool applyCriticalCoreRule(AlgorithmState&);
 
 	bool subedgeOccursInSuperedge(const Edge&, const Edge&, const AlgorithmState&);
 	std::vector<EdgeIndex> isCriticalCore(const Edge&, const AlgorithmState&);

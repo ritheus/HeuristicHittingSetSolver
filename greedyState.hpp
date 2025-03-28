@@ -12,12 +12,15 @@ struct GreedyState : AlgorithmState {
 public:
 	pq::updatable_priority_queue<Node, uint32_t> potentialNodeImpact;
 
-	GreedyState(NumNodes, NumEdges, std::vector<Edge>&&); // O(n * log n + m * deg_edge)
+	GreedyState(NumNodes, NumEdges, std::vector<Edge>&&, const cxxopts::ParseResult&); // O(n * log n + m * deg_edge)
+	GreedyState(Hypergraph&, const cxxopts::ParseResult&);
 
-	std::unordered_set<Node> calculateSolution(GreedyState&, cxxopts::ParseResult&);
+	Solution calculateSolution(bool=true);
 	void deleteNodes(const std::vector<Node>&);
 	void deleteEdges(std::vector<EdgeIndex>&) override;
 	void addToSolution(Node) override;
+	void banFromSolution(Node) override;
+	void setSolution(Solution solution);
 
 	std::pair<uint32_t, Node> getHighestImpactNode();
 	uint32_t getImpact(Node);

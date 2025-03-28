@@ -4,40 +4,49 @@
 #include <iostream>
 
 namespace kernelization {
-	void applyKernelization(AlgorithmState& state, cxxopts::ParseResult& optionsResult) {
+	bool applyKernelization(AlgorithmState& state, const cxxopts::ParseResult& optionsResult) {
 		LOG("Applying kernelization rules...");
+		bool changed = false;
 		const bool all = optionsResult.count("kernelization_allRules") > 0;
 
 		if (all || optionsResult.count("kernelization_vertexDominationRule")) {
-			applyVertexDominationRule(state);
+			changed |= applyVertexDominationRule(state);
 			LOG("VertexDominationRule applied");
 		}
 		if (all || optionsResult.count("kernelization_edgeDominationRule")) {
-			applyEdgeDominationRule(state);
+			changed |= applyEdgeDominationRule(state);
 			LOG("EdgeDominationRule applied");
 		}
 		if (all || optionsResult.count("kernelization_criticalCoreRule")) {
-			applyCriticalCoreRule(state);
+			throw std::runtime_error("CriticalCoreRule not implemented");
+			changed |= applyCriticalCoreRule(state);
 			LOG("CriticalCoreRule applied");
 		}
 		if (all || optionsResult.count("kernelization_unitEdgeRule")) {
-			applyUnitEdgeRule(state);
+			changed |= applyUnitEdgeRule(state);
 			LOG("UnitEdgeRule applied");
 		}
+
+		return changed;
 	}
 
-	void applyUnitEdgeRule(AlgorithmState& state) {
-		for (Edge edge : state.hypergraph.getEdges()) {
-			if (edge.size() == 1) {
+	bool applyUnitEdgeRule(AlgorithmState& state) {
+		bool changed = false;
+		for (EdgeIndex edgeIndex = 0; edgeIndex < state.hypergraph.getEdges().size(); edgeIndex++) {
+			const Edge& edge = state.hypergraph.getEdge(edgeIndex);
+			if (edge.size() == 1 && !state.hypergraph.isEdgeHit(edgeIndex)) {
 				state.addToSolution(edge[0]);
+				changed = true;
 				LOG("UnitEdgeRule - Node " << edge[0] << " added to solution.");
 			}
 		}
+		return changed;
 	}
 
-	void applyEdgeDominationRule(AlgorithmState& state) {
+	bool applyEdgeDominationRule(AlgorithmState& state) {
 		std::vector<EdgeIndex> dominatedEdgeIndizes = findDominatedEdges(state);
 		state.deleteEdges(dominatedEdgeIndizes);
+		return !dominatedEdgeIndizes.empty();
 	}
 
 	std::vector<EdgeIndex> findDominatedEdges(AlgorithmState& state) {
@@ -46,7 +55,7 @@ namespace kernelization {
 		for (EdgeIndex dominatedEdgeIndex = 0; dominatedEdgeIndex < state.hypergraph.getEdges().size(); dominatedEdgeIndex++) { // vielleicht lieber von hinten nach vorn iterieren, dann muss in deleteEdges() nicht mehr sortiert werden
 			for (EdgeIndex dominatingEdgeIndex = 0; dominatingEdgeIndex < state.hypergraph.getEdges().size(); dominatingEdgeIndex++) {
 				if (dominatedEdgeIndex != dominatingEdgeIndex) {
-					if (edgeDominatesEdge(state.hypergraph.getEdge(dominatingEdgeIndex), state.hypergraph.getEdge(dominatedEdgeIndex), dominatingEdgeIndex, dominatingEdgeIndex)) {
+					if (edgeDominatesEdge(state.hypergraph.getEdge(dominatingEdgeIndex), state.hypergraph.getEdge(dominatedEdgeIndex), dominatingEdgeIndex, dominatedEdgeIndex)) {
 						dominatedEdgeIndizes.push_back(dominatedEdgeIndex);
 						LOG("EdgeDominationRule - Edge " << dominatedEdgeIndex << " is dominated by Edge " << dominatingEdgeIndex << " and gets removed from the instance.");
 						break;
@@ -59,8 +68,8 @@ namespace kernelization {
 	}
 
 	bool edgeDominatesEdge(const Edge& dominating, const Edge& dominated, EdgeIndex dominatingEdgeIndex, EdgeIndex dominatedEdgeIndex) {
-		for (Node dominatedEdgeNode : dominated) {
-			if (std::find(dominating.begin(), dominating.end(), dominatedEdgeNode) == dominating.end()) {
+		for (Node dominatingEdgeNode : dominating) {
+			if (std::find(dominated.begin(), dominated.end(), dominatingEdgeNode) == dominated.end()) {
 				return false;
 			}
 		}
@@ -70,9 +79,10 @@ namespace kernelization {
 		return true;
 	}
 
-	void applyVertexDominationRule(AlgorithmState& state) {
+	bool applyVertexDominationRule(AlgorithmState& state) {
 		std::unordered_set<Node> dominatedNodes = findDominatedNodes(state);
 		state.deleteNodes(std::vector<Node>(dominatedNodes.begin(), dominatedNodes.end()));
+		return !dominatedNodes.empty();
 	}
 
 	std::unordered_set<Node> findDominatedNodes(AlgorithmState& state) {
@@ -93,22 +103,22 @@ namespace kernelization {
 	}
 
 	bool nodeDominatesNode(Node dominating, Node dominated, AlgorithmState& state) {
-		if (dominated == dominating) {
-			return false;
-		}
+		const auto& dominatingEdges = state.hypergraph.getIncidentEdgeIndizes(dominating);
+		const auto& dominatedEdges = state.hypergraph.getIncidentEdgeIndizes(dominated);
 
-		const auto& domEdges = state.hypergraph.getIncidentEdgeIndizes(dominating);
-		const auto& subEdges = state.hypergraph.getIncidentEdgeIndizes(dominated);
+		std::unordered_set<EdgeIndex> dominatingSet(dominatingEdges.begin(), dominatingEdges.end());
 
-		std::unordered_set<EdgeIndex> domSet(domEdges.begin(), domEdges.end());
-
-		for (EdgeIndex edge : subEdges) {
-			if (domSet.find(edge) == domSet.end()) return false;
+		for (EdgeIndex edgeIndex : dominatedEdges) {
+			if (dominatingSet.find(edgeIndex) == dominatingSet.end()) {
+				return false;
+			}
 		}
-		if (domEdges.size() == subEdges.size()) {
-			return dominated > dominating; // tie break, higher index gets dominated
+		if (dominatingEdges.size() > dominatedEdges.size()) {
+			return true;
 		}
-		return true;
+		else {
+			return dominated > dominating; // tie breaker, only higher index gets dominated
+		}
 	}
 
 	void applyHighDegreeRule(AlgorithmState& state) {
@@ -127,7 +137,7 @@ namespace kernelization {
 	A critical core is a subedge c so that the link of each subedge that properly includes c is "small" while the link of c itself is "big".
 	The link of a subedge is the number of hyperedges in the hypergraph that contain it.
 	*/
-	void applyCriticalCoreRule(AlgorithmState& state) {
+	bool applyCriticalCoreRule(AlgorithmState& state) {
 		for (uint32_t coreDegree = 2; coreDegree < state.hypergraph.getMaximumEdgeDegree(); coreDegree++) {
 			for (const Edge& core : state.hypergraph.getSubedgesOfDegree(coreDegree)) {
 				std::vector<EdgeIndex> coreLink = isCriticalCore(core, state);
@@ -150,6 +160,8 @@ namespace kernelization {
 				}
 			}
 		}
+
+		return false;
 	}
 
 	/*
@@ -159,14 +171,14 @@ namespace kernelization {
 	std::vector<EdgeIndex> isCriticalCore(const Edge& core, const AlgorithmState& state) {
 		uint32_t coreDegree = core.size();
 		std::vector<EdgeIndex> coreLink = calculateLink(core, state);
-		uint32_t coreCriticalThreshold = std::pow(state.upperSolutionSizeBound, state.hypergraph.getMaximumEdgeDegree() - coreDegree);
+		uint32_t coreCriticalThreshold = 0;//std::pow(state.upperSolutionSizeBound, state.hypergraph.getMaximumEdgeDegree() - coreDegree);
 
 		if (coreLink.size() < coreCriticalThreshold) {
 			return {};
 		}
 
 		for (uint32_t subedgeDegree = coreDegree + 1; subedgeDegree < state.hypergraph.getMaximumEdgeDegree(); subedgeDegree++) {
-			uint32_t otherCriticalThreshold = std::pow(state.upperSolutionSizeBound, state.hypergraph.getMaximumEdgeDegree() - subedgeDegree);
+			uint32_t otherCriticalThreshold = 0; //std::pow(state.upperSolutionSizeBound, state.hypergraph.getMaximumEdgeDegree() - subedgeDegree);
 			// iterate through all subedges of degree i and if it contains core, calculate the number of occurences
 			for (const Edge& subedge : state.hypergraph.getSubedgesOfDegree(subedgeDegree)) {
 				if (subedgeOccursInSuperedge(core, subedge, state)) {

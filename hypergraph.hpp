@@ -43,6 +43,12 @@ public:
         } // O(n)
     }
 
+    void reset() {
+		edgeHitFlags.assign(this->edges.size(), false);
+		numUnhitEdges = m;
+		numHitEdges = 0;
+    }
+
     const std::vector<Edge> getSubedgesOfDegree(uint32_t d) const {
         std::vector<Edge> subedges;
 
@@ -273,15 +279,23 @@ public:
         return numUnhitEdges;
     }
 
+    void setNumUnhitEdges(uint32_t m) {
+		numUnhitEdges = m;
+    }
+
     uint32_t getNumHitEdges() const {
         return numHitEdges;
+    }
+
+    void setNumHitEdges(uint32_t m) {
+        numHitEdges = m;
     }
 
     bool isEdgeHit(EdgeIndex edgeIndex) const {
         return edgeHitFlags[edgeIndex];
     }
 
-    bool isEmpty() const {
+    bool isSolved() const {
         return numUnhitEdges==0;
     }
 

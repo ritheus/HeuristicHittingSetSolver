@@ -7,24 +7,35 @@
 #include "cxxopts.hpp"
 #include "sigtermHandler.hpp"
 
-GreedyState::GreedyState(NumNodes n, NumEdges m, std::vector<Edge>&& setSystem) : AlgorithmState(n, m, std::move(setSystem)) { // O(n * log n + m * deg_edge)
+GreedyState::GreedyState(NumNodes n, NumEdges m, std::vector<Edge>&& setSystem, const cxxopts::ParseResult& optionsResult) : AlgorithmState(n, m, std::move(setSystem), optionsResult) { // O(n * log n + m * deg_edge)
 	potentialNodeImpact.reserve(n);
 	for (Node node : hypergraph.getNodes()) {
 		potentialNodeImpact.push(node, hypergraph.getIncidentEdgeIndizes(node).size()); // O(log n)
 	} // O(n * log n)
 }
 
-std::unordered_set<Node> GreedyState::calculateSolution(GreedyState& state, cxxopts::ParseResult& optionsResult) {
+GreedyState::GreedyState(Hypergraph& hypergraph, const cxxopts::ParseResult& optionsResult) : AlgorithmState(hypergraph, optionsResult) { // O(n * log n + m * deg_edge)
+	potentialNodeImpact.reserve(hypergraph.n);
+	for (Node node : hypergraph.getNodes()) {
+		potentialNodeImpact.push(node, hypergraph.getIncidentEdgeIndizes(node).size()); // O(log n)
+	} // O(n * log n)
+}
+
+Solution GreedyState::calculateSolution(bool applyKernelization) {
 	LOG("Using greedy algorithm...");
 
-	kernelization::applyKernelization(state, optionsResult);
+	if (applyKernelization) kernelization::applyKernelization(*this, optionsResult);
 
-	while (!state.hypergraph.isEmpty() && keep_running()) { // O(1)
-		auto [highestPriorityNodeGain, highestPriorityNode] = state.getHighestImpactNode(); // O(1)
-		state.addToSolution(highestPriorityNode); // O(deg_node * deg_edge * log n)
+	while (!hypergraph.isSolved() && keep_running()) { // O(1)
+		uint32_t oldSolutionSize = getSolution().size();
+		auto [highestPriorityNodeGain, highestPriorityNode] = getHighestImpactNode(); // O(1)
+		addToSolution(highestPriorityNode); // O(deg_node * deg_edge * log n)
+		if (oldSolutionSize == getSolution().size()) {
+			return {};
+		}
 	} // O(n log n * deg_node * deg_edge)
 
-	return state.getSolution();
+	return getSolution();
 }
 
 void GreedyState::deleteNodes(const std::vector<Node>& nodesToRemove) {
@@ -44,6 +55,12 @@ void GreedyState::deleteEdges(std::vector<EdgeIndex>& edgeIndizesToRemove) {
 	hypergraph.deleteEdges(edgeIndizesToRemove);
 }
 
+void GreedyState::setSolution(Solution newSolution) {
+	for (Node node : newSolution.getSolution()) {
+		addToSolution(node);
+	}
+}
+
 /**
 *	Adds the given node to the solution, marks the incident edges as hit and updates the potential impact of all incident edges.
 */
@@ -56,6 +73,11 @@ void GreedyState::addToSolution(Node node) {
 			} // O(deg_edge * log n)
 		}
 	} // O(deg_node * deg_edge * log n)
+}
+
+void GreedyState::banFromSolution(Node node) {
+	bannedNodes.insert(node);
+	potentialNodeImpact.remove(node);
 }
 
 std::pair<uint32_t, Node> GreedyState::getHighestImpactNode() {

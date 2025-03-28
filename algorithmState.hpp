@@ -2,35 +2,45 @@
 
 #include "aliases.hpp"
 #include "hypergraph.hpp"
+#include "cxxopts.hpp"
+#include "solution.hpp"
 #include <iostream>
 
 struct AlgorithmState {
 	Hypergraph hypergraph;
 	Solution solution;
-	uint32_t lowerSolutionSizeBound = 0;
-	uint32_t upperSolutionSizeBound;
+	std::unordered_set<Node> bannedNodes;
+	cxxopts::ParseResult optionsResult;
 
-	AlgorithmState(NumNodes n, NumEdges m, std::vector<Edge>&& setSystem) : hypergraph(n, m, std::move(setSystem)) { 
-		upperSolutionSizeBound = hypergraph.n;
+	AlgorithmState(Hypergraph& hypergraph, const cxxopts::ParseResult& optionsResult) : hypergraph(hypergraph), optionsResult(optionsResult) {
+		this->hypergraph.reset();
 	}
 
-	virtual void addToSolution(Node node) {
-		solution.insert(node);
+	AlgorithmState(NumNodes n, NumEdges m, std::vector<Edge>&& setSystem, const cxxopts::ParseResult& optionsResult) : hypergraph(n, m, std::move(setSystem)), optionsResult(optionsResult) {}
+
+	Solution getSolution() {
+		return solution;
 	}
 
-	std::unordered_set<Node>& getSolution() {
-		return solution.getSolution();
+	void setSolution(Solution solution) {
+		this->solution = solution;
 	}
 
-	virtual void deleteNodes(const std::vector<Node>& nodesToRemove) = 0;
+	bool isSolved() {
+		return hypergraph.isSolved();
+	}
 
 	virtual void addEdge(Edge edge) {
 		hypergraph.addEdge(std::move(edge));
 	}
 
-	virtual void deleteEdges(std::vector<EdgeIndex>& edgeIndizesToRemove) {
-		hypergraph.deleteEdges(edgeIndizesToRemove);
+	virtual Solution calculateSolution(bool=true) = 0;
+	virtual void addToSolution(Node) = 0;
+	virtual void banFromSolution(Node) {
+		throw std::runtime_error("banFromSolution not implemented");
 	}
+	virtual void deleteNodes(const std::vector<Node>&) = 0;
+	virtual void deleteEdges(std::vector<EdgeIndex>&) = 0;
 
 	virtual ~AlgorithmState() = default;
 };
