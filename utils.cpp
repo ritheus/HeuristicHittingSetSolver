@@ -94,15 +94,15 @@ std::tuple<NumNodes, NumEdges, std::vector<std::vector<Node>>> parseStdIn() {
     return parseInputStream(std::cin);
 }
 
-void writeToStdOut(const std::unordered_set<Node>& solution) {
+void writeToStdOut(const std::unordered_set<Node>& solutionSet) {
     std::string buffer;
-    buffer.reserve(solution.size() * 6 + 10); // heuristic: <=6 chars per node (inkl. '\n')
+    buffer.reserve(solutionSet.size() * 6 + 10); // heuristic: <=6 chars per node (inkl. '\n')
 
     // n
-    buffer += std::to_string(solution.size()) + '\n';
+    buffer += std::to_string(solutionSet.size()) + '\n';
 
     // write all nodes into buffer
-    for (Node node : solution) {
+    for (Node node : solutionSet) {
         buffer += std::to_string(node) + '\n';
     }
 

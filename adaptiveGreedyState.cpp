@@ -10,7 +10,7 @@
 #include "kernelization.hpp"
 #include "logger.hpp"
 
-AdaptiveGreedyState::AdaptiveGreedyState(NumNodes n, NumEdges m, std::vector<Edge>&& setSystem) : AlgorithmState(n, m, std::move(setSystem)) { // O(n * log n + m * deg_edge)
+AdaptiveGreedyState::AdaptiveGreedyState(NumNodes n, NumEdges m, std::vector<Edge>&& setSystem, const cxxopts::ParseResult& optionsResult) : AlgorithmState(n, m, std::move(setSystem), optionsResult) { // O(n * log n + m * deg_edge)
     edgesHitByNode.resize(n + 1);
     edgesOnlyHitByNode.resize(n + 1);
     nodesHittingEdge.resize(m);
@@ -21,25 +21,32 @@ AdaptiveGreedyState::AdaptiveGreedyState(NumNodes n, NumEdges m, std::vector<Edg
         potentialNodeImpact.push(node, hypergraph.getIncidentEdgeIndizes(node).size()); // O(log n)
     } // O(n * log n)
 }
-std::unordered_set<Node> AdaptiveGreedyState::calculateSolution(AdaptiveGreedyState& state, cxxopts::ParseResult& optionsResult) {
+Solution AdaptiveGreedyState::calculateSolution(bool applyKernelization) {
 	LOG("Using AdaptiveGreedy algorithm...");
     uint32_t switches = 0;
 
-    kernelization::applyKernelization(state, optionsResult);
+    if (applyKernelization) kernelization::applyKernelization(*this, optionsResult);
 
-    while (!state.hypergraph.isEmpty() && keep_running()) { // O(1)
-        auto [highestImpact, highestImpactNode] = state.getHighestImpactNode(); // O(1)
-        state.addToSolution(highestImpactNode); // O(deg_node * (deg_node + deg_edge * log n))
-        switches += state.shrinkSolutionIfApplicable(highestImpact); // O(deg_node * deg_edge * log n)
+    for (EdgeIndex edgeIndex = 0; edgeIndex < hypergraph.getEdges().size(); edgeIndex++) {
+        Edge edge = hypergraph.getEdge(edgeIndex);
+    }
+
+    while (!hypergraph.isSolved() && keep_running()) { // O(1)
+        auto [highestImpact, highestImpactNode] = getHighestImpactNode(); // O(1)
+        if (highestImpact > 1000) {
+            break;
+        }
+        addToSolution(highestImpactNode); // O(deg_node * (deg_node + deg_edge * log n))
+        switches += shrinkSolutionIfApplicable(highestImpact); // O(deg_node * deg_edge * log n)
     } // O(n? more? * ( deg_node^2 + deg_node * deg_edge * log n))
         
 	LOG("Switches: " << switches);
 
-    return state.getSolution();
+    return getSolution();
 }
 
 void AdaptiveGreedyState::addToSolution(Node node) {
-    AlgorithmState::addToSolution(node);
+    solution.insert(node);
     edgesHitByNode[node] = hypergraph.getIncidentEdgeIndizes(node); // O(1)
 
     for (EdgeIndex edgeIndex : edgesHitByNode[node]) {
@@ -67,7 +74,7 @@ void AdaptiveGreedyState::addToSolution(Node node) {
 }
 
 void AdaptiveGreedyState::removeFromSolution(Node node) {
-    solution.erase(node); // O(1)
+    solution.erase(node);
     for (EdgeIndex edgeIndex : edgesHitByNode[node]) {
         nodesHittingEdge[edgeIndex].erase(std::find(nodesHittingEdge[edgeIndex].begin(), nodesHittingEdge[edgeIndex].end(), node)); // O(deg_edge)
         if (nodesHittingEdge[edgeIndex].size() == 1) {
@@ -111,6 +118,15 @@ void AdaptiveGreedyState::clearEdgesHitByNode(Node node) {
 void AdaptiveGreedyState::deleteNodes(const std::vector<Node>& nodesToRemove) {
     for (const Node node : nodesToRemove) {
         potentialNodeImpact.remove(node);
+        for (EdgeIndex edgeIndex : hypergraph.getIncidentEdgeIndizes(node)) {
+            if (hypergraph.getEdge(edgeIndex).size() == 2) {
+                for (Node otherNode : hypergraph.getEdge(edgeIndex)) {
+                    if (otherNode != node) {
+                        addToEdgesOnlyHitByNode(otherNode, edgeIndex);
+					}
+                }
+            }
+        }
     }
 
     hypergraph.deleteNodes(nodesToRemove);
