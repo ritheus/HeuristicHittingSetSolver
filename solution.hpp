@@ -1,9 +1,11 @@
 #pragma once
 
 #include "aliases.hpp"
+#include <unordered_set>
 
 struct Solution {
 	std::unordered_set<Node> solutionSet;
+	Node mostRecentlyAddedNode;
 
 	Solution() {}
 
@@ -13,6 +15,7 @@ struct Solution {
 
 	void insert(Node node) {
 		solutionSet.insert(node);
+		mostRecentlyAddedNode = node;
 	}
 
 	void erase(Node node) {
@@ -22,6 +25,7 @@ struct Solution {
 	void combine(Solution& solution2) {
 		for (Node node : solution2.solutionSet) {
 			insert(node);
+			mostRecentlyAddedNode = node;
 		}
 	}
 
@@ -39,5 +43,9 @@ struct Solution {
 
 	bool empty() {
 		return solutionSet.empty();
+	}
+
+	bool operator==(const Solution& other) const {
+		return solutionSet == other.solutionSet;
 	}
 };

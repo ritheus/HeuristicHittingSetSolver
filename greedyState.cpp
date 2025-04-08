@@ -15,7 +15,7 @@ GreedyState::GreedyState(NumNodes n, NumEdges m, std::vector<Edge>&& setSystem, 
 }
 
 GreedyState::GreedyState(Hypergraph& hypergraph, const cxxopts::ParseResult& optionsResult) : AlgorithmState(hypergraph, optionsResult) { // O(n * log n + m * deg_edge)
-	potentialNodeImpact.reserve(hypergraph.n);
+	potentialNodeImpact.reserve(hypergraph.getN());
 	for (Node node : hypergraph.getNodes()) {
 		potentialNodeImpact.push(node, hypergraph.getIncidentEdgeIndizes(node).size()); // O(log n)
 	} // O(n * log n)

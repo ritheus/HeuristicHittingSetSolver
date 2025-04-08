@@ -1,6 +1,10 @@
 #include "algorithmState.hpp"
+#include "aliases.hpp"
+#include <map>
 
 struct VCState : AlgorithmState {
+	std::map<Node, double> orderedFractionalSolution;
+
 	VCState(Hypergraph&, const cxxopts::ParseResult&);
 	VCState(NumNodes, NumEdges, std::vector<Edge>&&, const cxxopts::ParseResult&);
 
@@ -10,5 +14,6 @@ struct VCState : AlgorithmState {
 	void deleteEdges(std::vector<EdgeIndex>&) override;
 
 	std::unordered_map<Node, double> buildAndSolveLP();
+	std::map<Node, double> getOrderedFractionalSolution();
 	bool isApproximately(double a, double b, double epsilon = 0.0001);
 };
