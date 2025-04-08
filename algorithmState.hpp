@@ -18,11 +18,11 @@ struct AlgorithmState {
 
 	AlgorithmState(NumNodes n, NumEdges m, std::vector<Edge>&& setSystem, const cxxopts::ParseResult& optionsResult) : hypergraph(n, m, std::move(setSystem)), optionsResult(optionsResult) {}
 
-	Solution getSolution() {
+	Solution& getSolution() {
 		return solution;
 	}
 
-	void setSolution(Solution solution) {
+	virtual void setSolution(Solution solution) {
 		this->solution = solution;
 	}
 

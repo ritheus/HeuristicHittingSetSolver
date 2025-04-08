@@ -20,9 +20,11 @@ public:
     pq::updatable_priority_queue<Node, uint32_t> potentialNodeImpact;
 
     AdaptiveGreedyState(NumNodes, NumEdges, std::vector<Edge>&&, const cxxopts::ParseResult&); // O(n * log n + m * deg_edge)
+    AdaptiveGreedyState(Hypergraph&, const cxxopts::ParseResult&); // O(n * log n + m * deg_edge)
 
     Solution calculateSolution(bool=true);
     void addToSolution(Node) override; // O(deg_node * deg_edge * log n)
+    virtual void setSolution(Solution) override;
     void removeFromSolution(Node);
     bool shrinkSolutionIfApplicable(uint32_t);
     void addToEdgesOnlyHitByNode(Node, EdgeIndex);

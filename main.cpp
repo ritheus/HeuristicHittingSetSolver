@@ -6,6 +6,11 @@
 #include "kernelization.hpp"
 #include "sigtermHandler.hpp"
 #include "cxxopts.hpp"
+#include "localSearch.hpp"
+#include "localSearchStrategy.hpp"
+#include "adaptiveGreedyTabuLocalSearch.hpp"
+#include "LPLocalSearch.hpp"
+#include "randomLocalSearch.hpp"
 #include <iostream>
 #include <fstream>
 
@@ -14,7 +19,7 @@
 int main(int argc, char* argv[]) {
 #if _DEBUG
     //"--kernelization_unitEdgeRule", "--kernelization_vertexDominationRule", "--kernelization_edgeDominationRule"
-    const char* fakeArgv[] = { argv[0], "-a", "vc", "-i", "exact_009.hgr", "--kernelization_unitEdgeRule", "--kernelization_vertexDominationRule" };
+    const char* fakeArgv[] = { argv[0], "-a", "vc", "-i", "exact_004.hgr", "--kernelization_unitEdgeRule", "--kernelization_vertexDominationRule", "--kernelization_edgeDominationRule", "--localSearch_tabu"};
     argc = sizeof(fakeArgv) / sizeof(fakeArgv[0]);
     argv = const_cast<char**>(fakeArgv);
 #endif
@@ -31,6 +36,9 @@ int main(int argc, char* argv[]) {
         ("kernelization_edgeDominationRule", "Apply the Edge Domination Rule kernelization method")
         ("kernelization_criticalCoreRule", "Apply the Critical Core Rule kernelization method")
         ("kernelization_allRules", "Apply all kernelization rules")
+        ("localSearch_tabu", "Apply greedy tabu local search")
+        ("localSearch_random", "Apply random local search")
+        ("localSearch_LP", "Apply LP local search")
         ("i,input", "Use the specified input file instead of reading from stdin", cxxopts::value<std::string>())
         ("h,help", "Show this help message and exit");
 
@@ -70,26 +78,51 @@ int main(int argc, char* argv[]) {
         };
     std::string algorithm = toLower(optionsResult["algorithm"].as<std::string>());
 
+
     Solution solution;
+    std::unique_ptr<AlgorithmState> state;
     if (algorithm == "greedy") {
-        GreedyState state = GreedyState(n, m, std::move(setSystem), optionsResult); // O(n * log n + m * deg_edge)
-        solution = state.calculateSolution();
+        state = std::make_unique<GreedyState>(n, m, std::move(setSystem), optionsResult); // O(n * log n + m * deg_edge)
+        solution = state->calculateSolution();
     }
     else if (algorithm == "adaptivegreedy") {
-        AdaptiveGreedyState state = AdaptiveGreedyState(n, m, std::move(setSystem), optionsResult);
-        solution = state.calculateSolution();
+        state = std::make_unique<AdaptiveGreedyState>(n, m, std::move(setSystem), optionsResult);
+        solution = state->calculateSolution();
     }
     else if (algorithm == "vc") {
-        VCState state = VCState(n, m, std::move(setSystem), optionsResult);
-        solution = state.calculateSolution();
+        state = std::make_unique<VCState>(n, m, std::move(setSystem), optionsResult);
+        solution = state->calculateSolution();
     }
     else if (algorithm == "branchandreduce") {
-        BranchAndReduceState state = BranchAndReduceState(n, m, std::move(setSystem), optionsResult);
-        solution = state.calculateSolution();
+        state = std::make_unique<BranchAndReduceState>(n, m, std::move(setSystem), optionsResult);
+        solution = state->calculateSolution();
     }
     else {
         throw std::runtime_error("Es wurde kein Algorithmus ausgewählt.");
     }
+
+
+    if (optionsResult.count("localSearch_tabu") || optionsResult.count("localSearch_random") || optionsResult.count("localSearch_LP")) {
+        std::unique_ptr<LocalSearchStrategy> localSearchStrategy;
+        if (optionsResult.count("localSearch_tabu")) {
+			localSearchStrategy = std::make_unique<AdaptiveGreedyTabuLocalSearch>(state->hypergraph, state->getSolution(), 10);
+		}
+		else if (optionsResult.count("localSearch_random")) {
+			localSearchStrategy = std::make_unique<RandomLocalSearch>();
+		}
+        else if (optionsResult.count("localSearch_LP")) {
+            auto* vcState = dynamic_cast<VCState*>(state.get()); // static_cast is faster
+			if (vcState == nullptr) {
+				throw std::runtime_error("LP Local Search only works for VC State");
+			}
+            else {
+                localSearchStrategy = std::make_unique<LPLocalSearch>(vcState->getOrderedFractionalSolution());
+            }
+        }
+        LocalSearch localSearch(std::move(state), std::move(localSearchStrategy), optionsResult);
+        solution = localSearch.run(1000, 2);
+	}
+    
 
     // Output
     writeToStdOut(solution.getSolution());

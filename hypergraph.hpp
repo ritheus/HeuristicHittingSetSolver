@@ -2,6 +2,7 @@
 
 #include "aliases.hpp"
 #include "logger.hpp"
+#include "solution.hpp"
 #include <unordered_set>
 #include <numeric>
 #include <algorithm>
@@ -13,16 +14,15 @@ private:
     std::vector<Node> activeNodes;
     uint32_t maximumEdgeDegree = 0;
     uint32_t maximumVertexDegree = 0;
-    std::vector<bool> edgeHitFlags;
+    std::vector<uint32_t> edgeHitCounts;
     NumEdges numUnhitEdges;
     NumEdges numHitEdges;
-
-public:
     NumNodes n;
     NumEdges m;
 
+public:
     Hypergraph(NumNodes n, NumNodes m, std::vector<Edge>&& setSystem) : n(n), m(m), edges(std::move(setSystem)) {
-        edgeHitFlags.assign(this->edges.size(), false);
+        edgeHitCounts.assign(this->edges.size(), 0);
         incidentEdgeIndizes.resize(n + 1); // n+1 because the given format enumerates nodes beginning with 1 and I dont want to deal with conversion
         activeNodes.resize(n + 1);
         std::iota(activeNodes.begin(), activeNodes.end(), 0);
@@ -44,7 +44,7 @@ public:
     }
 
     void reset() {
-		edgeHitFlags.assign(this->edges.size(), false);
+		edgeHitCounts.assign(this->edges.size(), 0);
 		numUnhitEdges = m;
 		numHitEdges = 0;
     }
@@ -78,8 +78,8 @@ public:
     }
 
     bool setEdgeHit(EdgeIndex edgeIndex) {
-        if (edgeHitFlags[edgeIndex] == false) {
-            edgeHitFlags[edgeIndex] = true;
+        if (edgeHitCounts[edgeIndex] == 0) {
+            edgeHitCounts[edgeIndex]++;
             numUnhitEdges--;
             numHitEdges++;
             return true;
@@ -88,8 +88,8 @@ public:
     }
 
     bool setEdgeUnhit(EdgeIndex edgeIndex) {
-        if (edgeHitFlags[edgeIndex] == true) {
-            edgeHitFlags[edgeIndex] = false;
+        if (edgeHitCounts[edgeIndex] > 0) {
+            edgeHitCounts[edgeIndex]--;
             numUnhitEdges++;
             numHitEdges--;
             return true;
@@ -148,9 +148,9 @@ public:
         }
 
         std::swap(edges[toBeRemoved], edges[lastIndex]);
-        bool tmp = edgeHitFlags[toBeRemoved]; // std::swap doesn't work with std::vector<bool>
-        edgeHitFlags[toBeRemoved] = edgeHitFlags[lastIndex];
-        edgeHitFlags[lastIndex] = tmp;
+        uint32_t tmp = edgeHitCounts[toBeRemoved]; // std::swap doesn't work with std::vector<bool>
+        edgeHitCounts[toBeRemoved] = edgeHitCounts[lastIndex];
+        edgeHitCounts[lastIndex] = tmp;
     }
 
     void deleteEdge(EdgeIndex edgeIndex, bool& recalculateVertexDegree, bool& recalculateEdgeDegree) {
@@ -169,11 +169,11 @@ public:
         removeEdgeReferencesFromNodes(lastIndex, recalculateVertexDegree);
 
         edges.pop_back();
-        if (edgeHitFlags.back())
+        if (edgeHitCounts.back())
             numHitEdges--;
         else
             numUnhitEdges--;
-        edgeHitFlags.pop_back();
+        edgeHitCounts.pop_back();
         m--;
 
         LOG("Deleted edge with index " << edgeIndex);
@@ -275,6 +275,22 @@ public:
         return maximumEdgeDegree;
     }
 
+    uint32_t getM() const {
+        return m;
+    }
+
+    uint32_t getN() const {
+		return n;
+    }
+
+    Node getMaximumNode() const {
+		return activeNodes.back();
+    }
+
+    EdgeIndex getMaximumEdgeIndex() const {
+		return edges.size() - 1;
+	}
+
     uint32_t getNumUnhitEdges() const {
         return numUnhitEdges;
     }
@@ -292,11 +308,26 @@ public:
     }
 
     bool isEdgeHit(EdgeIndex edgeIndex) const {
-        return edgeHitFlags[edgeIndex];
+        return edgeHitCounts[edgeIndex] > 0;
     }
 
     bool isSolved() const {
         return numUnhitEdges==0;
+    }
+
+    bool isSolvedBy(Solution& solution) const {
+        std::vector<bool> isEdgeHit(getMaximumEdgeIndex() + 1, false);
+        for (Node node : solution.getSolution()) {
+            for (EdgeIndex edgeIndex : incidentEdgeIndizes[node]) {
+				isEdgeHit[edgeIndex] = true;
+			}
+		}
+		for (EdgeIndex edgeIndex = 0; edgeIndex < edges.size(); edgeIndex++) {
+			if (!isEdgeHit[edgeIndex]) {
+				return false;
+			}
+        }
+		return true;
     }
 
     void calculateMaximumVertexDegree() {

@@ -50,6 +50,8 @@ Solution VCState::calculateSolution(bool applyKernelization) {
 		}
 	}
 
+	orderedFractionalSolution = std::map<Node, double>(fractionalSolution.begin(), fractionalSolution.end());
+
 	return solution;
 }
 
@@ -114,6 +116,10 @@ void VCState::addToSolution(Node node) {
 			hypergraph.setEdgeHit(edgeIndex);
 		}
 	}
+}
+
+std::map<Node, double> VCState::getOrderedFractionalSolution() {
+	return orderedFractionalSolution;
 }
 
 void VCState::deleteNodes(const std::vector<Node>& nodesToDelete) {

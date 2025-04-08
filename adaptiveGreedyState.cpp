@@ -21,6 +21,19 @@ AdaptiveGreedyState::AdaptiveGreedyState(NumNodes n, NumEdges m, std::vector<Edg
         potentialNodeImpact.push(node, hypergraph.getIncidentEdgeIndizes(node).size()); // O(log n)
     } // O(n * log n)
 }
+
+AdaptiveGreedyState::AdaptiveGreedyState(Hypergraph& hypergraph, const cxxopts::ParseResult& optionsResult) : AlgorithmState(hypergraph, optionsResult) { // O(n * log n + m * deg_edge)
+    edgesHitByNode.resize(hypergraph.getMaximumNode() + 1);
+    edgesOnlyHitByNode.resize(hypergraph.getMaximumNode() + 1);
+    nodesHittingEdge.resize(hypergraph.getMaximumEdgeIndex() + 1);
+
+    solutionNodeSingleResponsibilities.reserve(hypergraph.getMaximumNode());
+    potentialNodeImpact.reserve(hypergraph.getMaximumNode());
+    for (Node node : hypergraph.getNodes()) {
+        potentialNodeImpact.push(node, hypergraph.getIncidentEdgeIndizes(node).size()); // O(log n)
+    } // O(n * log n)
+}
+
 Solution AdaptiveGreedyState::calculateSolution(bool applyKernelization) {
 	LOG("Using AdaptiveGreedy algorithm...");
     uint32_t switches = 0;
@@ -73,6 +86,12 @@ void AdaptiveGreedyState::addToSolution(Node node) {
     } // O(deg_node * deg_edge * log n)
 }
 
+void AdaptiveGreedyState::setSolution(Solution solution) {
+    for (Node node : solution.getSolution()) {
+        addToSolution(node);
+	}
+}
+
 void AdaptiveGreedyState::removeFromSolution(Node node) {
     solution.erase(node);
     for (EdgeIndex edgeIndex : edgesHitByNode[node]) {
@@ -95,7 +114,7 @@ void AdaptiveGreedyState::removeFromSolution(Node node) {
 
 bool AdaptiveGreedyState::shrinkSolutionIfApplicable(uint32_t highestImpact) {
     Node leastImpactfulSolutionNode = solutionNodeSingleResponsibilities.top().key;
-    int32_t lowestImpact = solutionNodeSingleResponsibilities.top().priority - hypergraph.m;
+    int32_t lowestImpact = solutionNodeSingleResponsibilities.top().priority - hypergraph.getM();
 
     if (-lowestImpact < highestImpact) {
         removeFromSolution(leastImpactfulSolutionNode); // O(n_sol + deg_node * deg_edge * log n)
@@ -106,7 +125,7 @@ bool AdaptiveGreedyState::shrinkSolutionIfApplicable(uint32_t highestImpact) {
 
 void AdaptiveGreedyState::addToEdgesOnlyHitByNode(Node node, EdgeIndex edgeIndex) {
     edgesOnlyHitByNode[node].push_back(edgeIndex); // O(1)
-    solutionNodeSingleResponsibilities.set(node, hypergraph.m - 1, solutionNodeSingleResponsibilities.get_priority(node).second - 1); // minus because we want a min queue, so this node gets MORE impact and + m because the pq can only handle uint types, making m the "new 0"; O(log n)
+    solutionNodeSingleResponsibilities.set(node, hypergraph.getM() - 1, solutionNodeSingleResponsibilities.get_priority(node).second - 1); // minus because we want a min queue, so this node gets MORE impact and + m because the pq can only handle uint types, making m the "new 0"; O(log n)
 }
 
 void AdaptiveGreedyState::clearEdgesHitByNode(Node node) {
