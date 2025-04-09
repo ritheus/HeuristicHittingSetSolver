@@ -19,7 +19,7 @@
 int main(int argc, char* argv[]) {
 #if _DEBUG
     //"--kernelization_unitEdgeRule", "--kernelization_vertexDominationRule", "--kernelization_edgeDominationRule"
-    const char* fakeArgv[] = { argv[0], "-a", "vc", "-i", "exact_004.hgr", "--kernelization_unitEdgeRule", "--kernelization_vertexDominationRule", "--kernelization_edgeDominationRule", "--localSearch_tabu"};
+    const char* fakeArgv[] = { argv[0], "-a", "vc", "-i", "exact_001.hgr", "--kernelization_unitEdgeRule", "--kernelization_vertexDominationRule", "--kernelization_edgeDominationRule", "--localSearch_LP", "--vc_numIterations", "1000"};
     argc = sizeof(fakeArgv) / sizeof(fakeArgv[0]);
     argv = const_cast<char**>(fakeArgv);
 #endif
@@ -30,13 +30,14 @@ int main(int argc, char* argv[]) {
         "Use the flags below to configure the solver.\n");
 
     options.add_options()
-        ("a,algorithm", "Algorithm to use (e.g., Greedy, AdaptiveGreedy, BranchAndReduce)", cxxopts::value<std::string>())
+        ("a,algorithm", "Algorithm to use (e.g. Greedy, AdaptiveGreedy, BranchAndReduce, VC)", cxxopts::value<std::string>())
+        ("vc_numIterations", "Randomly round the fractional solution of the VC algorithm to the specified number of iterations", cxxopts::value<uint32_t>())
         ("kernelization_unitEdgeRule", "Apply the Unit Edge Rule kernelization method")
         ("kernelization_vertexDominationRule", "Apply the Vertex Domination Rule kernelization method")
         ("kernelization_edgeDominationRule", "Apply the Edge Domination Rule kernelization method")
         ("kernelization_criticalCoreRule", "Apply the Critical Core Rule kernelization method")
         ("kernelization_allRules", "Apply all kernelization rules")
-        ("localSearch_tabu", "Apply greedy tabu local search")
+        ("localSearch_tabu", "Apply adaptive greedy tabu local search")
         ("localSearch_random", "Apply random local search")
         ("localSearch_LP", "Apply LP local search")
         ("i,input", "Use the specified input file instead of reading from stdin", cxxopts::value<std::string>())
