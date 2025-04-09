@@ -4,6 +4,7 @@
 
 struct VCState : AlgorithmState {
 	std::map<Node, double> orderedFractionalSolution;
+	uint32_t numIterations;
 
 	VCState(Hypergraph&, const cxxopts::ParseResult&);
 	VCState(NumNodes, NumEdges, std::vector<Edge>&&, const cxxopts::ParseResult&);

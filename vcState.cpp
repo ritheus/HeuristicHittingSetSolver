@@ -12,35 +12,52 @@ Solution VCState::calculateSolution(bool applyKernelization) {
 		kernelization::applyKernelization(*this, optionsResult);
 	}
 	double lambda = 2.0;
+	numIterations = optionsResult["vc_numIterations"].as<uint32_t>();
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	std::uniform_real_distribution<> dist(0.0, lambda);
 	std::unordered_map<Node, double> fractionalSolution = buildAndSolveLP();
 	std::vector<Node> nodesToDelete;
-	std::vector<Node> maybeNodes;
+	std::vector<Node> currentSolutionNodes;
+	std::vector<Node> bestSolutionNodes;
 	nodesToDelete.reserve(fractionalSolution.size());
+
 	for (const auto& [node, value] : fractionalSolution) {
 		if (isApproximately(value, 0.0)) {
 			nodesToDelete.push_back(node);
 		}
-		if (isApproximately(value, 1.0)) {
-			addToSolution(node);
-		}
-		else if (value >= 1/lambda) {
-			addToSolution(node);
-			maybeNodes.push_back(node);
-		}
-		else if (value < 1/lambda) {
-			if (dist(gen) < value * lambda) {
-				addToSolution(node);
-			}
-			maybeNodes.push_back(node);
-		}
-		if (hypergraph.isSolved()) {
-			break;
-		}
+	}
+	for (Node node : nodesToDelete) {
+		fractionalSolution.erase(node);
 	}
 	deleteNodes(nodesToDelete);
+
+	for (uint32_t i = 0; i < numIterations; i++) {
+		for (const auto& [node, value] : fractionalSolution) {
+			if (isApproximately(value, 1.0)) {
+				currentSolutionNodes.push_back(node);
+			}
+			else if (value >= 1 / lambda) {
+				currentSolutionNodes.push_back(node);
+			}
+			else if (value < 1 / lambda) {
+				if (dist(gen) < value * lambda) {
+					currentSolutionNodes.push_back(node);
+				}
+			}
+			if (hypergraph.isSolved()) {
+				break;
+			}
+		}
+		if (currentSolutionNodes.size() < bestSolutionNodes.size() || bestSolutionNodes.empty()) {
+			bestSolutionNodes = currentSolutionNodes;
+		}
+		currentSolutionNodes.clear();
+	}
+
+	for (Node node : bestSolutionNodes) {
+		addToSolution(node);
+	}
 
 	for (EdgeIndex edgeIndex = 0; edgeIndex < hypergraph.getEdges().size(); edgeIndex++) {
 		if (!hypergraph.isEdgeHit(edgeIndex)) {
