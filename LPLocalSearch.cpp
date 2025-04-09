@@ -5,36 +5,35 @@
 
 Solution LPLocalSearch::removeNodes(Hypergraph& hypergraph, Solution& newPartialSolution, uint32_t numNodesToRemove = 2) {
 	// Build sampling distribution
-	std::map<Node, double> samplingDistribution;
-	double sum = 0.0;
+	std::vector<double> inverseLPValues;
+	std::vector<Node> nodes;
+	inverseLPValues.reserve(fractionalLPSolution.size());
+	nodes.reserve(fractionalLPSolution.size());
 	for (const auto& [node, value] : fractionalLPSolution) {
 		if (newPartialSolution.contains(node)) {
 			double inverseValue = 1 - fractionalLPSolution[node];
 			if (inverseValue > 0.0) {
-				sum += inverseValue;
-				samplingDistribution[node] = sum;
+				inverseLPValues.push_back(inverseValue);
+				nodes.push_back(node);
 			}
 		}
 	}
 
-	// Remove node
+	// Sample nodes to remove
 	std::random_device rd;
 	std::mt19937 gen(rd());
-	std::uniform_real_distribution<> dist(0.0, sum);
-	for (uint32_t i = 0; i < numNodesToRemove; i++) { // this can be done much faster for larger numNodesToRemove (binary search, multiple samples at once, ...)
-		double sampleValue = dist(gen);
-		std::optional<std::pair<Node, double>> prev;
-		double prevValue = 0.0;
-		Node prevNode = 0;
-		for (const auto& [node, value] : samplingDistribution) {
-			if (sampleValue <= value) {
-				newPartialSolution.erase(prevNode);
-				samplingDistribution.erase(prevNode);
-				break;
-			}
-			prevValue = value;
-			prevNode = node;
+	std::discrete_distribution samplingDistribution = std::discrete_distribution(inverseLPValues.begin(), inverseLPValues.end());
+	std::vector<Node> nodesToRemove;
+	for (uint32_t i = 0; i < numNodesToRemove; i++) {
+		uint32_t nodeToRemove = nodes[samplingDistribution(gen)];
+		if (std::find(nodesToRemove.begin(), nodesToRemove.end(), nodeToRemove) == nodesToRemove.end()) {
+			nodesToRemove.push_back(nodeToRemove);
 		}
+	}
+
+	// Remove nodes
+	for (Node node : nodesToRemove) {
+		newPartialSolution.erase(node);
 	}
 
 	return newPartialSolution;
