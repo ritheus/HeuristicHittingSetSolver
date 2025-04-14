@@ -19,7 +19,7 @@
 int main(int argc, char* argv[]) {
 #if _DEBUG
     //"--kernelization_unitEdgeRule", "--kernelization_vertexDominationRule", "--kernelization_edgeDominationRule"
-    const char* fakeArgv[] = { argv[0], "-a", "vc", "-i", "exact_001.hgr", "--kernelization_unitEdgeRule", "--kernelization_vertexDominationRule", "--kernelization_edgeDominationRule", "--localSearch_LP", "--vc_numIterations", "1000"};
+    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "bremen_subgraph_20.hgr", "--kernelization_unitEdgeRule", "--kernelization_vertexDominationRule", "--kernelization_edgeDominationRule", "--vc_numIterations", "1000"};
     argc = sizeof(fakeArgv) / sizeof(fakeArgv[0]);
     argv = const_cast<char**>(fakeArgv);
 #endif
@@ -84,23 +84,20 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<AlgorithmState> state;
     if (algorithm == "greedy") {
         state = std::make_unique<GreedyState>(n, m, std::move(setSystem), optionsResult); // O(n * log n + m * deg_edge)
-        solution = state->calculateSolution();
     }
     else if (algorithm == "adaptivegreedy") {
         state = std::make_unique<AdaptiveGreedyState>(n, m, std::move(setSystem), optionsResult);
-        solution = state->calculateSolution();
     }
     else if (algorithm == "vc") {
         state = std::make_unique<VCState>(n, m, std::move(setSystem), optionsResult);
-        solution = state->calculateSolution();
     }
     else if (algorithm == "branchandreduce") {
         state = std::make_unique<BranchAndReduceState>(n, m, std::move(setSystem), optionsResult);
-        solution = state->calculateSolution();
     }
     else {
         throw std::runtime_error("Es wurde kein Algorithmus ausgewählt.");
     }
+    solution = state->calculateSolution();
 
 
     if (optionsResult.count("localSearch_tabu") || optionsResult.count("localSearch_random") || optionsResult.count("localSearch_LP")) {

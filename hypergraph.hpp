@@ -21,7 +21,7 @@ private:
     NumEdges m;
 
 public:
-    Hypergraph(NumNodes n, NumNodes m, std::vector<Edge>&& setSystem) : n(n), m(m), edges(std::move(setSystem)) {
+    Hypergraph(NumNodes n, NumNodes m, std::vector<Edge>&& setSystem) : n(n), m(m), edges(std::move(setSystem)) { // O(m * deg_E)
         edgeHitCounts.assign(this->edges.size(), 0);
         incidentEdgeIndizes.resize(n + 1); // n+1 because the given format enumerates nodes beginning with 1 and I dont want to deal with conversion
         activeNodes.resize(n + 1);
@@ -31,16 +31,16 @@ public:
         for (EdgeIndex edgeIndex = 0; edgeIndex < edges.size(); edgeIndex++) {
             for (Node node : edges[edgeIndex]) {
                 incidentEdgeIndizes[node].push_back(edgeIndex);
-            } // O(deg_edge)
+            }
             if (edges[edgeIndex].size() > maximumEdgeDegree) {
                 maximumEdgeDegree = edges[edgeIndex].size();
             }
-        } // O(m * deg_edge)
+        }
         for (Node node : activeNodes) {
             if (incidentEdgeIndizes[node].size() > maximumVertexDegree) {
                 maximumVertexDegree = incidentEdgeIndizes[node].size();
             }
-        } // O(n)
+        }
     }
 
     void reset() {

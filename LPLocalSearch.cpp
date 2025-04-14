@@ -42,8 +42,12 @@ Solution LPLocalSearch::removeNodes(Hypergraph& hypergraph, Solution& newPartial
 Solution LPLocalSearch::repairPartialSolution(Hypergraph& hypergraph, Solution& partialSolution) {
 	if (!hypergraph.isSolvedBy(partialSolution)) {
 		GreedyState state = GreedyState(hypergraph, {});
+		state.setNodeAges(nodeAges);
+		state.setHighestAge(highestAge);
 		state.setSolution(partialSolution);
 		partialSolution = state.calculateSolution();
+		nodeAges = state.nodeAges;
+		highestAge = state.highestAge;
 	}
 	return partialSolution;
 }

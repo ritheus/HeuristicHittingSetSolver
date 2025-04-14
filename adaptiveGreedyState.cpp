@@ -59,6 +59,7 @@ Solution AdaptiveGreedyState::calculateSolution(bool applyKernelization) {
 }
 
 void AdaptiveGreedyState::addToSolution(Node node) {
+    updateNodeAge(node);
     solution.insert(node);
     edgesHitByNode[node] = hypergraph.getIncidentEdgeIndizes(node); // O(1)
 
