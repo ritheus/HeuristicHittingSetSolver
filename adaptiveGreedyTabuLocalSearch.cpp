@@ -53,9 +53,13 @@ Solution AdaptiveGreedyTabuLocalSearch::removeNodes(Hypergraph& hypergraph, Solu
 Solution AdaptiveGreedyTabuLocalSearch::repairPartialSolution(Hypergraph& hypergraph, Solution& partialSolution) {
 	if (!hypergraph.isSolvedBy(partialSolution)) {
 		AdaptiveGreedyState state = AdaptiveGreedyState(hypergraph, {});
+		state.setNodeAges(nodeAges);
+		state.setHighestAge(highestAge);
 		state.setSolution(partialSolution);
 		partialSolution = state.calculateSolution();
 		solutionNodeSingleResponsibilities = state.solutionNodeSingleResponsibilities;
+		nodeAges = state.nodeAges;
+		highestAge = state.highestAge;
 	}
 	return partialSolution;
 }

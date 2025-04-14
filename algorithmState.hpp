@@ -11,6 +11,8 @@ struct AlgorithmState {
 	Solution solution;
 	std::unordered_set<Node> bannedNodes;
 	cxxopts::ParseResult optionsResult;
+	std::unordered_map<Node, uint32_t> nodeAges; // higher is newer
+	uint32_t highestAge = 0;
 
 	AlgorithmState(Hypergraph& hypergraph, const cxxopts::ParseResult& optionsResult) : hypergraph(hypergraph), optionsResult(optionsResult) {
 		this->hypergraph.reset();
@@ -32,6 +34,30 @@ struct AlgorithmState {
 
 	virtual void addEdge(Edge edge) {
 		hypergraph.addEdge(std::move(edge));
+	}
+
+	void updateNodeAge(Node node) {
+		nodeAges[node] = highestAge++;
+	}
+
+	uint32_t getNodeAge(Node node) {
+		return nodeAges[node];
+	}
+
+	uint32_t getHighestAge() {
+		return highestAge;
+	}
+
+	void setHighestAge(uint32_t age) {
+		highestAge = age;
+	}
+
+	void setNodeAges(std::unordered_map<Node, uint32_t> nodeAges) {
+		this->nodeAges = nodeAges;
+	}
+
+	std::unordered_map<Node, uint32_t> getNodeAges() {
+		return nodeAges;
 	}
 
 	virtual Solution calculateSolution(bool=true) = 0;

@@ -59,12 +59,16 @@ void GreedyState::setSolution(Solution newSolution) {
 	for (Node node : newSolution.getSolution()) {
 		addToSolution(node);
 	}
+	if (solution.size() != newSolution.size()) {
+		throw std::runtime_error("Solution size does not match");
+	}
 }
 
 /**
 *	Adds the given node to the solution, marks the incident edges as hit and updates the potential impact of all incident edges.
 */
 void GreedyState::addToSolution(Node node) {
+	updateNodeAge(node);
 	solution.insert(node);
 	for (EdgeIndex edgeIndex : hypergraph.getIncidentEdgeIndizes(node)) {
 		if (hypergraph.setEdgeHit(edgeIndex)) { // O(deg_edge * log n)
@@ -81,7 +85,26 @@ void GreedyState::banFromSolution(Node node) {
 }
 
 std::pair<uint32_t, Node> GreedyState::getHighestImpactNode() {
-	return potentialNodeImpact.top();
+	std::vector<std::pair<uint32_t, Node>> highestImpactNodes;
+	std::vector<uint32_t> nodeAges;
+	std::pair<uint32_t, Node> bestNode;
+	uint32_t lowestAge = std::numeric_limits<uint32_t>::max();
+	uint32_t highestPriority = 0;
+	while (potentialNodeImpact.top().priority >= highestPriority) {
+		highestPriority = potentialNodeImpact.top().priority;
+		highestImpactNodes.push_back(potentialNodeImpact.top());
+		potentialNodeImpact.pop();
+		if (getNodeAge(highestImpactNodes.back().second) < lowestAge) {
+			lowestAge = getNodeAge(highestImpactNodes.back().second);
+			bestNode = highestImpactNodes.back();
+		}
+	}
+	for (std::pair<uint32_t, Node> nodeAndPriority : highestImpactNodes) {
+		if (nodeAndPriority.second != bestNode.second) {
+			potentialNodeImpact.push(nodeAndPriority.second, nodeAndPriority.first);
+		}
+	}
+	return bestNode;
 }
 
 uint32_t GreedyState::getImpact(Node node) {

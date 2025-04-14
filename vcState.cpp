@@ -128,6 +128,7 @@ std::unordered_map<Node, double> VCState::buildAndSolveLP() {
 
 void VCState::addToSolution(Node node) {
 	if (!solution.contains(node)) {
+		updateNodeAge(node);
 		solution.insert(node);
 		for (EdgeIndex edgeIndex : hypergraph.getIncidentEdgeIndizes(node)) {
 			hypergraph.setEdgeHit(edgeIndex);

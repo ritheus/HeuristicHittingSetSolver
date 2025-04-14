@@ -35,8 +35,12 @@ Solution RandomLocalSearch::removeNodes(Hypergraph& hypergraph, Solution& newPar
 Solution RandomLocalSearch::repairPartialSolution(Hypergraph& hypergraph, Solution& partialSolution) {
 	if (!hypergraph.isSolvedBy(partialSolution)) {
 		GreedyState state = GreedyState(hypergraph, {});
+		state.setNodeAges(nodeAges);
+		state.setHighestAge(highestAge);
 		state.setSolution(partialSolution);
 		partialSolution = state.calculateSolution();
+		nodeAges = state.nodeAges;
+		highestAge = state.highestAge;
 	}
 	return partialSolution;
 }
