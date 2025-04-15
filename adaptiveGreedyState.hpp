@@ -13,7 +13,6 @@
 
 struct AdaptiveGreedyState : AlgorithmState {
 public:
-    std::vector<std::vector<EdgeIndex>> edgesOnlyHitByNode; // maybe unnecessary?
     std::vector<std::vector<Node>> nodesHittingEdge;
     pq::updatable_priority_queue<Node, uint32_t> solutionNodeSingleResponsibilities;
     pq::updatable_priority_queue<Node, uint32_t> potentialNodeImpact;

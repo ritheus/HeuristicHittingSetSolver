@@ -11,7 +11,6 @@
 #include "logger.hpp"
 
 AdaptiveGreedyState::AdaptiveGreedyState(NumNodes n, NumEdges m, std::vector<Edge>&& setSystem, const cxxopts::ParseResult& optionsResult) : AlgorithmState(n, m, std::move(setSystem), optionsResult) { // O(n * log n + m * deg_edge)
-    edgesOnlyHitByNode.resize(n + 1);
     nodesHittingEdge.resize(m);
 
     solutionNodeSingleResponsibilities.reserve(n);
@@ -22,7 +21,6 @@ AdaptiveGreedyState::AdaptiveGreedyState(NumNodes n, NumEdges m, std::vector<Edg
 }
 
 AdaptiveGreedyState::AdaptiveGreedyState(Hypergraph& hypergraph, const cxxopts::ParseResult& optionsResult) : AlgorithmState(hypergraph, optionsResult) { // O(n * log n + m * deg_edge)
-    edgesOnlyHitByNode.resize(hypergraph.getMaximumNode() + 1);
     nodesHittingEdge.resize(hypergraph.getMaximumEdgeIndex() + 1);
 
     solutionNodeSingleResponsibilities.reserve(hypergraph.getMaximumNode());
@@ -67,10 +65,6 @@ void AdaptiveGreedyState::addToSolution(Node node) {
         }
         else if (nodesHittingEdge[edgeIndex].size() == 2) {
             Node otherNode = nodesHittingEdge[edgeIndex][0];
-            auto it = std::find(edgesOnlyHitByNode[otherNode].begin(), edgesOnlyHitByNode[otherNode].end(), edgeIndex); // O(deg_node)
-            if (it != edgesOnlyHitByNode[otherNode].end()) {
-                edgesOnlyHitByNode[otherNode].erase(it); // O(deg_node)
-            }
             solutionNodeSingleResponsibilities.update(otherNode, solutionNodeSingleResponsibilities.get_priority(otherNode).second + 1); // again plus because we want a min queue; O(log n)
         }
     } // O(deg_node * (log n + deg_node))
@@ -122,12 +116,10 @@ bool AdaptiveGreedyState::shrinkSolutionIfApplicable(uint32_t highestImpact) {
 }
 
 void AdaptiveGreedyState::addToEdgesOnlyHitByNode(Node node, EdgeIndex edgeIndex) {
-    edgesOnlyHitByNode[node].push_back(edgeIndex); // O(1)
     solutionNodeSingleResponsibilities.set(node, hypergraph.getM() - 1, solutionNodeSingleResponsibilities.get_priority(node).second - 1); // minus because we want a min queue, so this node gets MORE impact and + m because the pq can only handle uint types, making m the "new 0"; O(log n)
 }
 
 void AdaptiveGreedyState::clearEdgesHitByNode(Node node) {
-    edgesOnlyHitByNode[node].clear(); // O(deg_node)
     solutionNodeSingleResponsibilities.remove(node);
 }
 
@@ -151,10 +143,6 @@ void AdaptiveGreedyState::deleteNodes(const std::vector<Node>& nodesToRemove) {
 void AdaptiveGreedyState::deleteEdges(std::vector<EdgeIndex>& edgeIndizesToRemove) {
     for (EdgeIndex edgeIndexToRemove : edgeIndizesToRemove) {
         for (Node node : hypergraph.getEdge(edgeIndexToRemove)) {
-            auto edgesOnlyHitByNodeIt = std::find(edgesOnlyHitByNode[node].begin(), edgesOnlyHitByNode[node].end(), edgeIndexToRemove);
-            if (edgesOnlyHitByNodeIt != edgesOnlyHitByNode[node].end()) {
-                edgesOnlyHitByNode[node].erase(edgesOnlyHitByNodeIt);
-            }
             updateImpact(node, getImpact(node) - 1);
             updateResponsibility(node, getResponsibility(node) - 1);
         }
