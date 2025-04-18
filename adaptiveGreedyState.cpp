@@ -11,8 +11,6 @@
 #include "logger.hpp"
 
 AdaptiveGreedyState::AdaptiveGreedyState(NumNodes n, NumEdges m, std::vector<Edge>&& setSystem, const cxxopts::ParseResult& optionsResult) : AlgorithmState(n, m, std::move(setSystem), optionsResult) { // O(n * log n + m * deg_edge)
-    edgesHitByNode.resize(n + 1);
-    edgesOnlyHitByNode.resize(n + 1);
     nodesHittingEdge.resize(m);
 
     solutionNodeSingleResponsibilities.reserve(n);
@@ -23,8 +21,6 @@ AdaptiveGreedyState::AdaptiveGreedyState(NumNodes n, NumEdges m, std::vector<Edg
 }
 
 AdaptiveGreedyState::AdaptiveGreedyState(Hypergraph& hypergraph, const cxxopts::ParseResult& optionsResult) : AlgorithmState(hypergraph, optionsResult) { // O(n * log n + m * deg_edge)
-    edgesHitByNode.resize(hypergraph.getMaximumNode() + 1);
-    edgesOnlyHitByNode.resize(hypergraph.getMaximumNode() + 1);
     nodesHittingEdge.resize(hypergraph.getMaximumEdgeIndex() + 1);
 
     solutionNodeSingleResponsibilities.reserve(hypergraph.getMaximumNode());
@@ -61,19 +57,14 @@ Solution AdaptiveGreedyState::calculateSolution(bool applyKernelization) {
 void AdaptiveGreedyState::addToSolution(Node node) {
     updateNodeAge(node);
     solution.insert(node);
-    edgesHitByNode[node] = hypergraph.getIncidentEdgeIndizes(node); // O(1)
 
-    for (EdgeIndex edgeIndex : edgesHitByNode[node]) {
+    for (EdgeIndex edgeIndex : hypergraph.getIncidentEdgeIndizes(node)) {
         nodesHittingEdge[edgeIndex].push_back(node);
         if (nodesHittingEdge[edgeIndex].size() == 1) {
             addToEdgesOnlyHitByNode(node, edgeIndex); // O(log n)
         }
         else if (nodesHittingEdge[edgeIndex].size() == 2) {
             Node otherNode = nodesHittingEdge[edgeIndex][0];
-            auto it = std::find(edgesOnlyHitByNode[otherNode].begin(), edgesOnlyHitByNode[otherNode].end(), edgeIndex); // O(deg_node)
-            if (it != edgesOnlyHitByNode[otherNode].end()) {
-                edgesOnlyHitByNode[otherNode].erase(it); // O(deg_node)
-            }
             solutionNodeSingleResponsibilities.update(otherNode, solutionNodeSingleResponsibilities.get_priority(otherNode).second + 1); // again plus because we want a min queue; O(log n)
         }
     } // O(deg_node * (log n + deg_node))
@@ -95,7 +86,7 @@ void AdaptiveGreedyState::setSolution(Solution solution) {
 
 void AdaptiveGreedyState::removeFromSolution(Node node) {
     solution.erase(node);
-    for (EdgeIndex edgeIndex : edgesHitByNode[node]) {
+    for (EdgeIndex edgeIndex : hypergraph.getIncidentEdgeIndizes(node)) {
         nodesHittingEdge[edgeIndex].erase(std::find(nodesHittingEdge[edgeIndex].begin(), nodesHittingEdge[edgeIndex].end(), node)); // O(deg_edge)
         if (nodesHittingEdge[edgeIndex].size() == 1) {
             Node otherNode = nodesHittingEdge[edgeIndex][0];
@@ -125,13 +116,10 @@ bool AdaptiveGreedyState::shrinkSolutionIfApplicable(uint32_t highestImpact) {
 }
 
 void AdaptiveGreedyState::addToEdgesOnlyHitByNode(Node node, EdgeIndex edgeIndex) {
-    edgesOnlyHitByNode[node].push_back(edgeIndex); // O(1)
     solutionNodeSingleResponsibilities.set(node, hypergraph.getM() - 1, solutionNodeSingleResponsibilities.get_priority(node).second - 1); // minus because we want a min queue, so this node gets MORE impact and + m because the pq can only handle uint types, making m the "new 0"; O(log n)
 }
 
 void AdaptiveGreedyState::clearEdgesHitByNode(Node node) {
-    edgesHitByNode[node].clear(); // O(deg_node)
-    edgesOnlyHitByNode[node].clear(); // O(deg_node)
     solutionNodeSingleResponsibilities.remove(node);
 }
 
@@ -155,14 +143,6 @@ void AdaptiveGreedyState::deleteNodes(const std::vector<Node>& nodesToRemove) {
 void AdaptiveGreedyState::deleteEdges(std::vector<EdgeIndex>& edgeIndizesToRemove) {
     for (EdgeIndex edgeIndexToRemove : edgeIndizesToRemove) {
         for (Node node : hypergraph.getEdge(edgeIndexToRemove)) {
-            auto edgesHitByNodeIt = std::find(edgesHitByNode[node].begin(), edgesHitByNode[node].end(), edgeIndexToRemove);
-            if (edgesHitByNodeIt != edgesHitByNode[node].end()) {
-                edgesHitByNode[node].erase(edgesHitByNodeIt);
-            }
-            auto edgesOnlyHitByNodeIt = std::find(edgesOnlyHitByNode[node].begin(), edgesOnlyHitByNode[node].end(), edgeIndexToRemove);
-            if (edgesOnlyHitByNodeIt != edgesOnlyHitByNode[node].end()) {
-                edgesOnlyHitByNode[node].erase(edgesOnlyHitByNodeIt);
-            }
             updateImpact(node, getImpact(node) - 1);
             updateResponsibility(node, getResponsibility(node) - 1);
         }
