@@ -20,7 +20,7 @@ Solution BranchAndReduceState::calculateSolution(bool applyKernelization) {
 
 	branchAndReduce(state, std::unordered_set<Node>(), std::unordered_set<Node>());
 
-	return solution.getSolution();
+	return solution;
 }
 
 std::optional<Solution> BranchAndReduceState::branchAndReduce(GreedyState state, std::unordered_set<Node> include, std::unordered_set<Node> exclude) { // might be merged with calculateSolution()

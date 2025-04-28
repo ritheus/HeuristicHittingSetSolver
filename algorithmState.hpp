@@ -62,6 +62,9 @@ struct AlgorithmState {
 
 	virtual Solution calculateSolution(bool=true) = 0;
 	virtual void addToSolution(Node) = 0;
+	virtual void removeFromSolution(Node) {
+		throw std::runtime_error("removeFromSolution not implemented");
+	}
 	virtual void banFromSolution(Node) {
 		throw std::runtime_error("banFromSolution not implemented");
 	}

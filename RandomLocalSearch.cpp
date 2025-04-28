@@ -3,44 +3,32 @@
 #include <cmath>
 #include <random>
 
-Solution RandomLocalSearch::removeNodes(Hypergraph& hypergraph, Solution& newPartialSolution, uint32_t numNodesToRemove = 2) {
-	// Build currentSolutionVector -> Worth if numNodesToRemove is large
-	currentSolutionVector.clear();
-	for (Node node : newPartialSolution.getSolution()) {
-		currentSolutionVector.push_back(node);
-	}
-
-	// Remove nodes
+void RandomLocalSearch::removeNodes(uint32_t numNodesToRemove = 2) {
 	std::random_device rd;
 	std::mt19937 gen(rd());
-	std::uniform_int_distribution<> dist(0, currentSolutionVector.size() - 1);
+	std::uniform_int_distribution<> dist(0, algorithmState->solution.solutionVector.size() - 1);
 	uint32_t sampleIndex = 0;
+	Node nodeToRemove;
 	for (uint32_t i = 0; i < numNodesToRemove; i++) {
 		do {
 			sampleIndex = dist(gen);
-		} while (sampleIndex >= currentSolutionVector.size());
-		currentSolutionVector[sampleIndex] = currentSolutionVector[currentSolutionVector.size() - 1];
-		currentSolutionVector.erase(currentSolutionVector.end() - 1);
+		} while (sampleIndex >= algorithmState->solution.solutionVector.size());
+		nodeToRemove = algorithmState->solution.solutionVector[sampleIndex];
+		algorithmState->removeFromSolution(nodeToRemove);
 	}
-
-	// Rebuild solution from currentSolutionVector
-	newPartialSolution = Solution();
-	for (Node node : currentSolutionVector) {
-		newPartialSolution.insert(node);
-	}
-
-	return newPartialSolution;
 }
 
-Solution RandomLocalSearch::repairPartialSolution(Hypergraph& hypergraph, Solution& partialSolution) {
-	if (!hypergraph.isSolvedBy(partialSolution)) {
-		GreedyState state = GreedyState(hypergraph, {});
-		state.setNodeAges(nodeAges);
-		state.setHighestAge(highestAge);
-		state.setSolution(partialSolution);
-		partialSolution = state.calculateSolution();
-		nodeAges = state.nodeAges;
-		highestAge = state.highestAge;
-	}
-	return partialSolution;
+void RandomLocalSearch::repairPartialSolution() {
+	algorithmState->calculateSolution();
+	//if (!hypergraph.isSolvedBy(partialSolution)) {
+		//state.setNodeAges(nodeAges);
+		//state.setHighestAge(highestAge);
+		//partialSolution = algorithmState->calculateSolution();
+		//nodeAges = state.nodeAges;
+		//highestAge = state.highestAge;
+	//}
+}
+
+void RandomLocalSearch::initializeAlgorithmState(std::unique_ptr<AlgorithmState> state) {
+	algorithmState = std::move(state);
 }

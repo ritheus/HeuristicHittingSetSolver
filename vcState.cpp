@@ -131,7 +131,16 @@ void VCState::addToSolution(Node node) {
 		updateNodeAge(node);
 		solution.insert(node);
 		for (EdgeIndex edgeIndex : hypergraph.getIncidentEdgeIndizes(node)) {
-			hypergraph.setEdgeHit(edgeIndex);
+			hypergraph.incrementHitCount(edgeIndex);
+		}
+	}
+}
+
+void VCState::removeFromSolution(Node node) {
+	if (solution.contains(node)) {
+		solution.erase(node);
+		for (EdgeIndex edgeIndex : hypergraph.getIncidentEdgeIndizes(node)) {
+			hypergraph.decrementHitCount(edgeIndex);
 		}
 	}
 }

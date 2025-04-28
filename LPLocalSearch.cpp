@@ -3,14 +3,14 @@
 #include <random>
 #include <optional>
 
-Solution LPLocalSearch::removeNodes(Hypergraph& hypergraph, Solution& newPartialSolution, uint32_t numNodesToRemove = 2) {
+void LPLocalSearch::removeNodes(uint32_t numNodesToRemove = 2) {
 	// Build sampling distribution
 	std::vector<double> inverseLPValues;
 	std::vector<Node> nodes;
 	inverseLPValues.reserve(fractionalLPSolution.size());
 	nodes.reserve(fractionalLPSolution.size());
 	for (const auto& [node, value] : fractionalLPSolution) {
-		if (newPartialSolution.contains(node)) {
+		if (algorithmState->getSolution().contains(node)) {
 			double inverseValue = 1 - fractionalLPSolution[node];
 			if (inverseValue > 0.0) {
 				inverseLPValues.push_back(inverseValue);
@@ -33,21 +33,14 @@ Solution LPLocalSearch::removeNodes(Hypergraph& hypergraph, Solution& newPartial
 
 	// Remove nodes
 	for (Node node : nodesToRemove) {
-		newPartialSolution.erase(node);
+		algorithmState->removeFromSolution(node);
 	}
-
-	return newPartialSolution;
 }
 
-Solution LPLocalSearch::repairPartialSolution(Hypergraph& hypergraph, Solution& partialSolution) {
-	if (!hypergraph.isSolvedBy(partialSolution)) {
-		GreedyState state = GreedyState(hypergraph, {});
-		state.setNodeAges(nodeAges);
-		state.setHighestAge(highestAge);
-		state.setSolution(partialSolution);
-		partialSolution = state.calculateSolution();
-		nodeAges = state.nodeAges;
-		highestAge = state.highestAge;
-	}
-	return partialSolution;
+void LPLocalSearch::repairPartialSolution() {
+	algorithmState->calculateSolution();
+}
+
+void LPLocalSearch::initializeAlgorithmState(std::unique_ptr<AlgorithmState> state) {
+	algorithmState = std::move(state);
 }

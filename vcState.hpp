@@ -11,6 +11,7 @@ struct VCState : AlgorithmState {
 
 	Solution calculateSolution(bool = true) override;
 	void addToSolution(Node) override;
+	void removeFromSolution(Node) override;
 	void deleteNodes(const std::vector<Node>&) override;
 	void deleteEdges(std::vector<EdgeIndex>&) override;
 

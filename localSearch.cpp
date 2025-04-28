@@ -5,27 +5,21 @@
 #include <random>
 
 Solution LocalSearch::run(uint32_t numIterations, uint32_t numNodesToDelete) {
-	currentSolution = bestSolution;
-
-	Solution solutionCandidate = Solution(currentSolution);
+	strategy->initializeAlgorithmState(std::move(state));
 	for (uint32_t i = 0; i < numIterations; i++) {
-		solutionCandidate = strategy->removeNodes(hypergraph, solutionCandidate, numNodesToDelete);
-		solutionCandidate = strategy->repairPartialSolution(hypergraph, solutionCandidate);
-
+		strategy->removeNodes(numNodesToDelete);
+		strategy->repairPartialSolution();
+		Solution& solutionCandidate = strategy->algorithmState->getSolution();
 		if (isAcceptable(solutionCandidate)) {
 			bestSolution = solutionCandidate;
-			currentSolution = solutionCandidate;
 		}
 	}
 
-	return bestSolution;
+	return std::move(bestSolution);
 }
 
 bool LocalSearch::isAcceptable(Solution& solutionCandidate) {
-	if (solutionCandidate.size() <= currentSolution.size()) {
-		return true;
-	}
-	return false;
+	return solutionCandidate.size() <= bestSolution.size();
 }
 
 
@@ -47,7 +41,7 @@ void LocalSearch::updatePotential(const std::vector<Node>& removedNodes, const s
 }
 
 double LocalSearch::potential(Node node) {
-	return harmonicApproximation(hypergraph.getIncidentEdgeIndizes(node).size()); // weight of each node is 1, so that gets ommitted
+	return harmonicApproximation(strategy->algorithmState->hypergraph.getIncidentEdgeIndizes(node).size()); // weight of each node is 1, so that gets ommitted
 }
 
 double LocalSearch::harmonicApproximation(uint32_t k) {
