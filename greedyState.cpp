@@ -30,9 +30,9 @@ Solution GreedyState::calculateSolution(bool applyKernelization) {
 		uint32_t oldSolutionSize = getSolution().size();
 		auto [highestPriorityNodeGain, highestPriorityNode] = getHighestImpactNode(); // O(1)
 		addToSolution(highestPriorityNode); // O(deg_node * deg_edge * log n)
-		if (oldSolutionSize == getSolution().size()) {
-			return {};
-		}
+		//if (oldSolutionSize == getSolution().size()) {
+		//	return {};
+		//}
 	} // O(n log n * deg_node * deg_edge)
 
 	return getSolution();
@@ -68,15 +68,28 @@ void GreedyState::setSolution(Solution newSolution) {
 *	Adds the given node to the solution, marks the incident edges as hit and updates the potential impact of all incident edges.
 */
 void GreedyState::addToSolution(Node node) {
+	if (solution.contains(node)) return;
 	updateNodeAge(node);
 	solution.insert(node);
 	for (EdgeIndex edgeIndex : hypergraph.getIncidentEdgeIndizes(node)) {
-		if (hypergraph.setEdgeHit(edgeIndex)) { // O(deg_edge * log n)
+		if (hypergraph.incrementHitCount(edgeIndex)) { // O(deg_edge * log n)
 			for (Node adjacentNode : hypergraph.getEdge(edgeIndex)) {
 				updateImpact(adjacentNode, getImpact(adjacentNode) - 1); // decrement potential impact; O(log n)
 			} // O(deg_edge * log n)
 		}
 	} // O(deg_node * deg_edge * log n)
+}
+
+void GreedyState::removeFromSolution(Node node) {
+	if (!solution.contains(node)) return;
+	solution.erase(node);
+	for (EdgeIndex edgeIndex : hypergraph.getIncidentEdgeIndizes(node)) {
+		if (hypergraph.decrementHitCount(edgeIndex)) { // O(deg_edge * log n)
+			for (Node adjacentNode : hypergraph.getEdge(edgeIndex)) {
+				updateImpact(adjacentNode, getImpact(adjacentNode) + 1); // increment potential impact; O(log n)
+			} // O(deg_edge * log n)
+		}
+	}
 }
 
 void GreedyState::banFromSolution(Node node) {
@@ -85,26 +98,7 @@ void GreedyState::banFromSolution(Node node) {
 }
 
 std::pair<uint32_t, Node> GreedyState::getHighestImpactNode() {
-	std::vector<std::pair<uint32_t, Node>> highestImpactNodes;
-	std::vector<uint32_t> nodeAges;
-	std::pair<uint32_t, Node> bestNode;
-	uint32_t lowestAge = std::numeric_limits<uint32_t>::max();
-	uint32_t highestPriority = 0;
-	while (potentialNodeImpact.top().priority >= highestPriority) {
-		highestPriority = potentialNodeImpact.top().priority;
-		highestImpactNodes.push_back(potentialNodeImpact.top());
-		potentialNodeImpact.pop();
-		if (getNodeAge(highestImpactNodes.back().second) < lowestAge) {
-			lowestAge = getNodeAge(highestImpactNodes.back().second);
-			bestNode = highestImpactNodes.back();
-		}
-	}
-	for (std::pair<uint32_t, Node> nodeAndPriority : highestImpactNodes) {
-		if (nodeAndPriority.second != bestNode.second) {
-			potentialNodeImpact.push(nodeAndPriority.second, nodeAndPriority.first);
-		}
-	}
-	return bestNode;
+	return potentialNodeImpact.top();
 }
 
 uint32_t GreedyState::getImpact(Node node) {

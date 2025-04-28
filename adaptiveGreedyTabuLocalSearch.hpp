@@ -16,10 +16,11 @@ struct AdaptiveGreedyTabuLocalSearch : LocalSearchStrategy {
 
 	bool nodeHasSingleResponsibility(Hypergraph&, Solution&, Node, EdgeIndex);
 
-	Solution removeNodes(Hypergraph&, Solution&, uint32_t) override;
-	Solution repairPartialSolution(Hypergraph&, Solution&) override;
+	void removeNodes(uint32_t) override;
+	void repairPartialSolution() override;
+	void initializeAlgorithmState(std::unique_ptr<AlgorithmState>) override;
 	// tabu list
 	void addToTabuList(Node, uint32_t);
-	bool canBeBanned(Node, Hypergraph&);
+	bool canBeBanned(Node);
 	bool isTabu(Node);
 };

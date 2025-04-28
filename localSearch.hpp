@@ -9,21 +9,19 @@
 #include <optional>
 
 struct LocalSearch {
-	Hypergraph hypergraph;
 	Solution bestSolution;
-	Solution currentSolution;
 	std::unique_ptr<LocalSearchStrategy> strategy;
+	std::unique_ptr<AlgorithmState> state;
 	cxxopts::ParseResult optionsResult;
 
 	LocalSearch(
 		std::unique_ptr<AlgorithmState> state,
 		std::unique_ptr<LocalSearchStrategy> strategy, 
 		const cxxopts::ParseResult& optionsResult
-	) : hypergraph(state->hypergraph), 
-		strategy(std::move(strategy)), 
+	) : strategy(std::move(strategy)), 
 		bestSolution(state->getSolution()), 
-		currentSolution(state->getSolution()),
-		optionsResult(optionsResult) {}
+		optionsResult(optionsResult),
+		state(std::move(state)) {}
 
 	Solution run(uint32_t, uint32_t);
 	bool isAcceptable(Solution&);

@@ -36,15 +36,8 @@ Solution AdaptiveGreedyState::calculateSolution(bool applyKernelization) {
 
     if (applyKernelization) kernelization::applyKernelization(*this, optionsResult);
 
-    for (EdgeIndex edgeIndex = 0; edgeIndex < hypergraph.getEdges().size(); edgeIndex++) {
-        Edge edge = hypergraph.getEdge(edgeIndex);
-    }
-
     while (!hypergraph.isSolved() && keep_running()) { // O(1)
         auto [highestImpact, highestImpactNode] = getHighestImpactNode(); // O(1)
-        if (highestImpact > 1000) {
-            break;
-        }
         addToSolution(highestImpactNode); // O(deg_node * (deg_node + deg_edge * log n))
         switches += shrinkSolutionIfApplicable(highestImpact); // O(deg_node * deg_edge * log n)
     } // O(n? more? * ( deg_node^2 + deg_node * deg_edge * log n))
@@ -70,7 +63,7 @@ void AdaptiveGreedyState::addToSolution(Node node) {
     } // O(deg_node * (log n + deg_node))
 
     for (EdgeIndex edgeIndex : hypergraph.getIncidentEdgeIndizes(node)) {
-        if (hypergraph.setEdgeHit(edgeIndex)) { // O(deg_edge * log n)
+        if (hypergraph.incrementHitCount(edgeIndex)) { // O(deg_edge * log n)
             for (Node node : hypergraph.getEdge(edgeIndex)) {
                 updateImpact(node, getImpact(node) - 1); // decrement potential impact; O(log n)
             } // O(deg_edge * log n)
@@ -89,15 +82,19 @@ void AdaptiveGreedyState::removeFromSolution(Node node) {
     for (EdgeIndex edgeIndex : hypergraph.getIncidentEdgeIndizes(node)) {
         nodesHittingEdge[edgeIndex].erase(std::find(nodesHittingEdge[edgeIndex].begin(), nodesHittingEdge[edgeIndex].end(), node)); // O(deg_edge)
         if (nodesHittingEdge[edgeIndex].size() == 1) {
+            hypergraph.decrementHitCount(edgeIndex);
             Node otherNode = nodesHittingEdge[edgeIndex][0];
             addToEdgesOnlyHitByNode(otherNode, edgeIndex); // O(log n)
         }
-        if (nodesHittingEdge[edgeIndex].size() == 0) {
-            if (hypergraph.setEdgeUnhit(edgeIndex)) { // O(1)
+        else if (nodesHittingEdge[edgeIndex].size() == 0) {
+            if (hypergraph.decrementHitCount(edgeIndex)) { // O(1)
                 for (Node node : hypergraph.getEdge(edgeIndex)) {
                     updateImpact(node, getImpact(node) + 1); // increment potential impact; O(log n)
                 } // O(deg_edge * log n)
             }
+        }
+        else {
+            hypergraph.decrementHitCount(edgeIndex);
         }
     } // O(deg_node) * O(deg_edge) * O(log n)
 

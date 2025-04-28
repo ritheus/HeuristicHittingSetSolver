@@ -15,11 +15,17 @@
 #include <fstream>
 
 #define LOGGING
+#define PROFILER
 
 int main(int argc, char* argv[]) {
 #if _DEBUG
     //"--kernelization_unitEdgeRule", "--kernelization_vertexDominationRule", "--kernelization_edgeDominationRule"
-    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "bremen_subgraph_20.hgr", "--kernelization_unitEdgeRule", "--kernelization_vertexDominationRule", "--kernelization_edgeDominationRule", "--vc_numIterations", "1000"};
+    const char* fakeArgv[] = { argv[0], "-a", "vc", "-i", "exact_001.hgr", "--localSearch_numIterations", "25", "--localSearch_LP", "--localSearch_numDeletions", "150"};
+    argc = sizeof(fakeArgv) / sizeof(fakeArgv[0]);
+    argv = const_cast<char**>(fakeArgv);
+#endif
+#ifdef PROFILER
+    const char* fakeArgv[] = { argv[0], "-a", "vc", "-i", "heuristic_092.hgr", "--localSearch_numIterations", "25", "--localSearch_LP", "--localSearch_numDeletions", "150" };
     argc = sizeof(fakeArgv) / sizeof(fakeArgv[0]);
     argv = const_cast<char**>(fakeArgv);
 #endif
@@ -31,7 +37,9 @@ int main(int argc, char* argv[]) {
 
     options.add_options()
         ("a,algorithm", "Algorithm to use (e.g. Greedy, AdaptiveGreedy, BranchAndReduce, VC)", cxxopts::value<std::string>())
-        ("vc_numIterations", "Randomly round the fractional solution of the VC algorithm to the specified number of iterations", cxxopts::value<uint32_t>())
+        ("vc_numIterations", "Randomly round the fractional solution of the VC algorithm to the specified number of iterations", cxxopts::value<uint32_t>()->default_value("5"))
+        ("localSearch_numIterations", "How many local search iterations to run", cxxopts::value<uint32_t>()->default_value("5"))
+        ("localSearch_numDeletions", "How many nodes to delete per local search iteration", cxxopts::value<uint32_t>()->default_value("5"))
         ("kernelization_unitEdgeRule", "Apply the Unit Edge Rule kernelization method")
         ("kernelization_vertexDominationRule", "Apply the Vertex Domination Rule kernelization method")
         ("kernelization_edgeDominationRule", "Apply the Edge Domination Rule kernelization method")
@@ -66,8 +74,22 @@ int main(int argc, char* argv[]) {
     }
     auto [n, m, setSystem] = result;
 #endif
+#ifdef PROFILER
+    std::tuple<NumNodes, NumEdges, std::vector<std::vector<Node>>> result;
+    std::ifstream inputFile(optionsResult["input"].as<std::string>());
+    if (inputFile.is_open()) {
+        result = parseInputStream(inputFile);
+    }
+    else {
+        std::cerr << "File couldnt be read!" << std::endl;
+        result = parseInputStream(std::cin);
+    }
+    auto [n, m, setSystem] = result;
+#endif
 #ifndef _DEBUG
+#ifndef PROFILER
     auto [n, m, setSystem] = parseInputStream(std::cin);
+#endif
 #endif
 
     std::signal(SIGTERM, signalHandler);
@@ -78,7 +100,6 @@ int main(int argc, char* argv[]) {
         return s;
         };
     std::string algorithm = toLower(optionsResult["algorithm"].as<std::string>());
-
 
     Solution solution;
     std::unique_ptr<AlgorithmState> state;
@@ -99,10 +120,13 @@ int main(int argc, char* argv[]) {
     }
     solution = state->calculateSolution();
 
-
+    uint32_t numIterations = optionsResult["localSearch_numIterations"].as<uint32_t>();
+    uint32_t numDeletions = optionsResult["localSearch_numDeletions"].as<uint32_t>();
     if (optionsResult.count("localSearch_tabu") || optionsResult.count("localSearch_random") || optionsResult.count("localSearch_LP")) {
         std::unique_ptr<LocalSearchStrategy> localSearchStrategy;
         if (optionsResult.count("localSearch_tabu")) {
+            state = std::make_unique<AdaptiveGreedyState>(state->hypergraph, optionsResult);
+            state->setSolution(solution);
 			localSearchStrategy = std::make_unique<AdaptiveGreedyTabuLocalSearch>(state->hypergraph, state->getSolution(), 10);
 		}
 		else if (optionsResult.count("localSearch_random")) {
@@ -118,7 +142,7 @@ int main(int argc, char* argv[]) {
             }
         }
         LocalSearch localSearch(std::move(state), std::move(localSearchStrategy), optionsResult);
-        solution = localSearch.run(1000, 2);
+        solution = localSearch.run(numIterations, numDeletions);
 	}
     
 

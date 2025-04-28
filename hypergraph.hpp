@@ -77,9 +77,12 @@ public:
         return subedges;
     }
 
-    bool setEdgeHit(EdgeIndex edgeIndex) {
-        if (edgeHitCounts[edgeIndex] == 0) {
-            edgeHitCounts[edgeIndex]++;
+    /*
+    * Returns true if the edge was not hit before
+    */
+    bool incrementHitCount(EdgeIndex edgeIndex) {
+        edgeHitCounts[edgeIndex]++;
+        if (edgeHitCounts[edgeIndex] == 1) {
             numUnhitEdges--;
             numHitEdges++;
             return true;
@@ -87,16 +90,20 @@ public:
         return false;
     }
 
-    bool setEdgeUnhit(EdgeIndex edgeIndex) {
-        if (edgeHitCounts[edgeIndex] > 0) {
-            edgeHitCounts[edgeIndex]--;
+    /*
+    * Returns true if the edge is unhit now
+    */
+    bool decrementHitCount(EdgeIndex edgeIndex) {
+        if (edgeHitCounts[edgeIndex] == 0) {
+            throw std::runtime_error("edgeHitCount negative");
+		}
+        edgeHitCounts[edgeIndex]--;
+        if (edgeHitCounts[edgeIndex] == 0) {
             numUnhitEdges++;
             numHitEdges--;
             return true;
         }
-        else {
-            return false;
-        }
+        return false;
     }
 
     void addEdge(const Edge& edge) {

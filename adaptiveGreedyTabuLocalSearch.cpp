@@ -23,16 +23,16 @@ bool AdaptiveGreedyTabuLocalSearch::nodeHasSingleResponsibility(Hypergraph& hype
 	return true;
 }
 
-Solution AdaptiveGreedyTabuLocalSearch::removeNodes(Hypergraph& hypergraph, Solution& newPartialSolution, uint32_t numNodesToRemove = 2) {
+void AdaptiveGreedyTabuLocalSearch::removeNodes(uint32_t numNodesToRemove = 2) {
 	// Remove nodes
 	std::unordered_map<Node, uint32_t> toBeReinserted; // vector is better
 	Node nodeToRemove;
 	uint32_t i = 0;
 	while (i < numNodesToRemove) {
 		nodeToRemove = solutionNodeSingleResponsibilities.top().key;
-		if (canBeBanned(nodeToRemove, hypergraph)) {
+		if (canBeBanned(nodeToRemove)) {
 			addToTabuList(nodeToRemove, tabuLength);
-			newPartialSolution.erase(nodeToRemove);
+			algorithmState->removeFromSolution(nodeToRemove);
 			solutionNodeSingleResponsibilities.pop();
 			i++;
 		}
@@ -40,34 +40,42 @@ Solution AdaptiveGreedyTabuLocalSearch::removeNodes(Hypergraph& hypergraph, Solu
 			solutionNodeSingleResponsibilities.pop();
 			toBeReinserted.insert({ nodeToRemove, solutionNodeSingleResponsibilities.get_priority(nodeToRemove).second });
 		}
+		if (solutionNodeSingleResponsibilities.size() == 0) {
+			break;
+		}
 	}
 
 	// Fix solutionNodeSingleResponsibilities
 	for (const auto& [node, value] : toBeReinserted) {
 		solutionNodeSingleResponsibilities.push(node, value);
 	}
-
-	return newPartialSolution;
 }
 
-Solution AdaptiveGreedyTabuLocalSearch::repairPartialSolution(Hypergraph& hypergraph, Solution& partialSolution) {
-	if (!hypergraph.isSolvedBy(partialSolution)) {
-		AdaptiveGreedyState state = AdaptiveGreedyState(hypergraph, {});
-		state.setNodeAges(nodeAges);
-		state.setHighestAge(highestAge);
-		state.setSolution(partialSolution);
-		partialSolution = state.calculateSolution();
-		solutionNodeSingleResponsibilities = state.solutionNodeSingleResponsibilities;
-		nodeAges = state.nodeAges;
-		highestAge = state.highestAge;
+void AdaptiveGreedyTabuLocalSearch::repairPartialSolution() {
+	algorithmState->calculateSolution();
+	auto* adaptiveState = dynamic_cast<AdaptiveGreedyState*>(algorithmState.get()); // static_cast is faster
+	if (algorithmState == nullptr) {
+		throw std::runtime_error("TabuLocalSearch only works with AdaptiveGreedyState");
 	}
-	return partialSolution;
+	solutionNodeSingleResponsibilities = adaptiveState->solutionNodeSingleResponsibilities;
+	//if (!hypergraph.isSolvedBy(partialSolution)) {
+		//AdaptiveGreedyState state = AdaptiveGreedyState(hypergraph, {});
+		//state.setNodeAges(nodeAges);
+		//state.setHighestAge(highestAge);
+		//state.setSolution(partialSolution);
+		//nodeAges = state.nodeAges;
+		//highestAge = state.highestAge;
+	//}
 }
 
-bool AdaptiveGreedyTabuLocalSearch::canBeBanned(Node bannedNode, Hypergraph& hypergraph) {
-	for (EdgeIndex edgeIndex : hypergraph.getIncidentEdgeIndizes(bannedNode)) {
+void AdaptiveGreedyTabuLocalSearch::initializeAlgorithmState(std::unique_ptr<AlgorithmState> state) {
+	algorithmState = std::move(state);
+}
+
+bool AdaptiveGreedyTabuLocalSearch::canBeBanned(Node bannedNode) {
+	for (EdgeIndex edgeIndex : algorithmState->hypergraph.getIncidentEdgeIndizes(bannedNode)) {
 		bool edgeSolvable = false;
-		for (Node node : hypergraph.getEdge(edgeIndex)) {
+		for (Node node : algorithmState->hypergraph.getEdge(edgeIndex)) {
 			if (!isTabu(node) && node != bannedNode) {
 				edgeSolvable = true;
 				break;
