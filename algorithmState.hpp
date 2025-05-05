@@ -10,6 +10,7 @@ struct AlgorithmState {
 	Hypergraph hypergraph;
 	Solution solution;
 	std::unordered_set<Node> bannedNodes;
+	std::vector<Node> unbannedNodes;
 	cxxopts::ParseResult optionsResult;
 	std::unordered_map<Node, uint32_t> nodeAges; // higher is newer
 	uint32_t highestAge = 0;
@@ -60,7 +61,10 @@ struct AlgorithmState {
 		return nodeAges;
 	}
 
-	virtual Solution calculateSolution(bool=true) = 0;
+	virtual Solution calculateSolution(bool = true) = 0;
+	virtual std::vector<Node> repairSolution() {
+		throw std::runtime_error("repairSolution not implemented");
+	}
 	virtual void addToSolution(Node) = 0;
 	virtual void removeFromSolution(Node) {
 		throw std::runtime_error("removeFromSolution not implemented");
