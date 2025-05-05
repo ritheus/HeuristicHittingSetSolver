@@ -19,7 +19,7 @@ void RandomLocalSearch::removeNodes(uint32_t numNodesToRemove = 2) {
 }
 
 void RandomLocalSearch::repairPartialSolution() {
-	algorithmState->calculateSolution();
+	algorithmState->repairSolution();
 	//if (!hypergraph.isSolvedBy(partialSolution)) {
 		//state.setNodeAges(nodeAges);
 		//state.setHighestAge(highestAge);

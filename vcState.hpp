@@ -14,8 +14,6 @@ struct VCState : AlgorithmState {
 	void removeFromSolution(Node) override;
 	void deleteNodes(const std::vector<Node>&) override;
 	void deleteEdges(std::vector<EdgeIndex>&) override;
-
-	std::unordered_map<Node, double> buildAndSolveLP();
 	std::map<Node, double> getOrderedFractionalSolution();
 	bool isApproximately(double a, double b, double epsilon = 0.0001);
 };

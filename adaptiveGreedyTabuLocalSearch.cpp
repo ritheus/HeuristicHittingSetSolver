@@ -28,7 +28,7 @@ void AdaptiveGreedyTabuLocalSearch::removeNodes(uint32_t numNodesToRemove = 2) {
 	std::unordered_map<Node, uint32_t> toBeReinserted; // vector is better
 	Node nodeToRemove;
 	uint32_t i = 0;
-	while (i < numNodesToRemove) {
+	while (i < numNodesToRemove && algorithmState->solution.solutionVector.size() > 0) {
 		nodeToRemove = solutionNodeSingleResponsibilities.top().key;
 		if (canBeBanned(nodeToRemove)) {
 			addToTabuList(nodeToRemove, tabuLength);

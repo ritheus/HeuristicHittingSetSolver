@@ -38,6 +38,17 @@ Solution GreedyState::calculateSolution(bool applyKernelization) {
 	return getSolution();
 }
 
+std::vector<Node> GreedyState::repairSolution() {
+	std::vector<Node> addedNodes;
+	while (!hypergraph.isSolved() && keep_running()) { // O(1)
+		auto [highestPriorityNodeGain, highestPriorityNode] = getHighestImpactNode();
+		addToSolution(highestPriorityNode); // O(deg_node * deg_edge * log n)
+		addedNodes.push_back(highestPriorityNode);
+	} // O(n log n * deg_node * deg_edge)
+
+	return addedNodes;
+}
+
 void GreedyState::deleteNodes(const std::vector<Node>& nodesToRemove) {
 	for (const Node node : nodesToRemove) {
 		potentialNodeImpact.remove(node);
@@ -56,6 +67,7 @@ void GreedyState::deleteEdges(std::vector<EdgeIndex>& edgeIndizesToRemove) {
 }
 
 void GreedyState::setSolution(Solution newSolution) {
+	solution = {};
 	for (Node node : newSolution.getSolution()) {
 		addToSolution(node);
 	}
@@ -98,13 +110,41 @@ void GreedyState::banFromSolution(Node node) {
 }
 
 std::pair<uint32_t, Node> GreedyState::getHighestImpactNode() {
-	return potentialNodeImpact.top();
+	std::vector<std::pair<uint32_t, Node>> toBeReinserted;
+	do {
+		Node node = potentialNodeImpact.top().key;
+		if (std::find(bannedNodes.begin(), bannedNodes.end(), node) != bannedNodes.end()) {
+			toBeReinserted.push_back(potentialNodeImpact.top());
+			potentialNodeImpact.pop();
+		}
+		else {
+			for (auto&& pair : toBeReinserted) {
+				potentialNodeImpact.push(pair.second, pair.first);
+			}
+			return potentialNodeImpact.top();
+		}
+	} while (potentialNodeImpact.size() > 0);
+	throw std::runtime_error("empty priority queue");
 }
 
 uint32_t GreedyState::getImpact(Node node) {
 	return potentialNodeImpact.get_priority(node).second;
 }
 
-bool GreedyState::updateImpact(const Node& node, const uint32_t new_priority, bool only_if_higher) {
-	return potentialNodeImpact.update(node, new_priority, only_if_higher); // O(log n)
+bool GreedyState::updateImpact(const Node& node, const uint32_t new_priority, bool only_if_higher, bool only_non_tabu) {
+	if (!only_non_tabu) {
+		return potentialNodeImpact.update(node, new_priority, only_if_higher); // O(log n)
+	}
+	else {
+		if (std::find(bannedNodes.begin(), bannedNodes.end(), node) != bannedNodes.end()) {
+			return false;
+		}
+		else {
+			return potentialNodeImpact.update(node, new_priority, only_if_higher);
+		}
+	}
+}
+
+void GreedyState::removeFromPQ(Node node) {
+	potentialNodeImpact.remove(node);
 }

@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-//#define LOGGING
+#define LOGGING
 #define LOGGINGBNR
 
 

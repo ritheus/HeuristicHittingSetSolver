@@ -16,6 +16,7 @@ public:
 	GreedyState(Hypergraph&, const cxxopts::ParseResult&);
 
 	Solution calculateSolution(bool=true);
+	virtual std::vector<Node> repairSolution() override;
 	void deleteNodes(const std::vector<Node>&);
 	void deleteEdges(std::vector<EdgeIndex>&) override;
 	void addToSolution(Node) override;
@@ -25,5 +26,6 @@ public:
 
 	std::pair<uint32_t, Node> getHighestImpactNode();
 	uint32_t getImpact(Node);
-	bool updateImpact(const Node&, const uint32_t, bool=false);
+	bool updateImpact(const Node&, const uint32_t, bool=false, bool=true);
+	void removeFromPQ(const Node);
 };

@@ -25,20 +25,26 @@ void LPLocalSearch::removeNodes(uint32_t numNodesToRemove = 2) {
 	std::discrete_distribution samplingDistribution = std::discrete_distribution(inverseLPValues.begin(), inverseLPValues.end());
 	std::vector<Node> nodesToRemove;
 	for (uint32_t i = 0; i < numNodesToRemove; i++) {
-		uint32_t nodeToRemove = nodes[samplingDistribution(gen)];
-		if (std::find(nodesToRemove.begin(), nodesToRemove.end(), nodeToRemove) == nodesToRemove.end()) {
-			nodesToRemove.push_back(nodeToRemove);
+		if (nodes.size() > nodesToRemove.size()) {
+			uint32_t nodeToRemove = nodes[samplingDistribution(gen)];
+			if (std::find(nodesToRemove.begin(), nodesToRemove.end(), nodeToRemove) == nodesToRemove.end()) {
+				nodesToRemove.push_back(nodeToRemove);
+			}
 		}
 	}
 
 	// Remove nodes
 	for (Node node : nodesToRemove) {
 		algorithmState->removeFromSolution(node);
+		greedyState.removeFromSolution(node);
 	}
 }
 
 void LPLocalSearch::repairPartialSolution() {
-	algorithmState->calculateSolution();
+	std::vector<Node> addedNodes = greedyState.repairSolution();
+	for (Node node : addedNodes) {
+		algorithmState->addToSolution(node);
+	}
 }
 
 void LPLocalSearch::initializeAlgorithmState(std::unique_ptr<AlgorithmState> state) {

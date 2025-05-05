@@ -11,16 +11,17 @@
 #include "adaptiveGreedyTabuLocalSearch.hpp"
 #include "LPLocalSearch.hpp"
 #include "randomLocalSearch.hpp"
+#include "randomTabuLocalSearch.hpp"
 #include <iostream>
 #include <fstream>
 
-#define LOGGING
-#define PROFILER
+//#define LOGGING
+//#define PROFILER
 
 int main(int argc, char* argv[]) {
 #if _DEBUG
     //"--kernelization_unitEdgeRule", "--kernelization_vertexDominationRule", "--kernelization_edgeDominationRule"
-    const char* fakeArgv[] = { argv[0], "-a", "vc", "-i", "exact_001.hgr", "--localSearch_numIterations", "25", "--localSearch_LP", "--localSearch_numDeletions", "150"};
+    const char* fakeArgv[] = { argv[0], "-a", "vc", "-i", "exact_001.hgr", "--localSearch_numIterations", "10000", "--localSearch_random", "--localSearch_numDeletions", "5", "--localSearch_tabuLength", "0"};
     argc = sizeof(fakeArgv) / sizeof(fakeArgv[0]);
     argv = const_cast<char**>(fakeArgv);
 #endif
@@ -40,6 +41,7 @@ int main(int argc, char* argv[]) {
         ("vc_numIterations", "Randomly round the fractional solution of the VC algorithm to the specified number of iterations", cxxopts::value<uint32_t>()->default_value("5"))
         ("localSearch_numIterations", "How many local search iterations to run", cxxopts::value<uint32_t>()->default_value("5"))
         ("localSearch_numDeletions", "How many nodes to delete per local search iteration", cxxopts::value<uint32_t>()->default_value("5"))
+        ("localSearch_tabuLength", "How long the tabu list should be", cxxopts::value<uint32_t>()->default_value("10"))
         ("kernelization_unitEdgeRule", "Apply the Unit Edge Rule kernelization method")
         ("kernelization_vertexDominationRule", "Apply the Vertex Domination Rule kernelization method")
         ("kernelization_edgeDominationRule", "Apply the Edge Domination Rule kernelization method")
@@ -47,6 +49,7 @@ int main(int argc, char* argv[]) {
         ("kernelization_allRules", "Apply all kernelization rules")
         ("localSearch_tabu", "Apply adaptive greedy tabu local search")
         ("localSearch_random", "Apply random local search")
+        ("localSearch_randomTabu", "Apply random local search with tabu list")
         ("localSearch_LP", "Apply LP local search")
         ("i,input", "Use the specified input file instead of reading from stdin", cxxopts::value<std::string>())
         ("h,help", "Show this help message and exit");
@@ -122,24 +125,31 @@ int main(int argc, char* argv[]) {
 
     uint32_t numIterations = optionsResult["localSearch_numIterations"].as<uint32_t>();
     uint32_t numDeletions = optionsResult["localSearch_numDeletions"].as<uint32_t>();
-    if (optionsResult.count("localSearch_tabu") || optionsResult.count("localSearch_random") || optionsResult.count("localSearch_LP")) {
+    uint32_t tabuLength = optionsResult["localSearch_tabuLength"].as<uint32_t>();
+    if (optionsResult.count("localSearch_tabu") || optionsResult.count("localSearch_random") || optionsResult.count("localSearch_LP") || optionsResult.count("localSearch_randomTabu")) {
         std::unique_ptr<LocalSearchStrategy> localSearchStrategy;
         if (optionsResult.count("localSearch_tabu")) {
             state = std::make_unique<AdaptiveGreedyState>(state->hypergraph, optionsResult);
             state->setSolution(solution);
-			localSearchStrategy = std::make_unique<AdaptiveGreedyTabuLocalSearch>(state->hypergraph, state->getSolution(), 10);
+			localSearchStrategy = std::make_unique<AdaptiveGreedyTabuLocalSearch>(state->hypergraph, state->getSolution(), tabuLength);
 		}
 		else if (optionsResult.count("localSearch_random")) {
+            state = std::make_unique<GreedyState>(state->hypergraph, optionsResult);
+			state->setSolution(solution);
 			localSearchStrategy = std::make_unique<RandomLocalSearch>();
 		}
         else if (optionsResult.count("localSearch_LP")) {
-            auto* vcState = dynamic_cast<VCState*>(state.get()); // static_cast is faster
+            auto* vcState = dynamic_cast<VCState*>(state.get());
+            GreedyState greedyState(state->hypergraph, {});
 			if (vcState == nullptr) {
-				throw std::runtime_error("LP Local Search only works for VC State");
+                localSearchStrategy = std::make_unique<LPLocalSearch>(greedyState);
 			}
             else {
-                localSearchStrategy = std::make_unique<LPLocalSearch>(vcState->getOrderedFractionalSolution());
+                localSearchStrategy = std::make_unique<LPLocalSearch>(greedyState, vcState->getOrderedFractionalSolution());
             }
+        }
+        else if (optionsResult.count("localSearch_randomTabu")) {
+            localSearchStrategy = std::make_unique<RandomTabuLocalSearch>(state->hypergraph, solution, tabuLength);
         }
         LocalSearch localSearch(std::move(state), std::move(localSearchStrategy), optionsResult);
         solution = localSearch.run(numIterations, numDeletions);
