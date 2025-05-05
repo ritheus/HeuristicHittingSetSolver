@@ -10,23 +10,24 @@
 #include "localSearchStrategy.hpp"
 #include "adaptiveGreedyTabuLocalSearch.hpp"
 #include "LPLocalSearch.hpp"
+#include "randomLPLocalSearch.hpp"
 #include "randomLocalSearch.hpp"
 #include "randomTabuLocalSearch.hpp"
 #include <iostream>
 #include <fstream>
 
 //#define LOGGING
-//#define PROFILER
+#define PROFILER
 
 int main(int argc, char* argv[]) {
 #if _DEBUG
     //"--kernelization_unitEdgeRule", "--kernelization_vertexDominationRule", "--kernelization_edgeDominationRule"
-    const char* fakeArgv[] = { argv[0], "-a", "vc", "-i", "exact_001.hgr", "--localSearch_numIterations", "10000", "--localSearch_random", "--localSearch_numDeletions", "5", "--localSearch_tabuLength", "0"};
+    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "exact_001.hgr", "--localSearch_numIterations", "100000", "--localSearch_randomLP", "--localSearch_numDeletions", "4", "--localSearch_tabuLength", "0"};
     argc = sizeof(fakeArgv) / sizeof(fakeArgv[0]);
     argv = const_cast<char**>(fakeArgv);
 #endif
 #ifdef PROFILER
-    const char* fakeArgv[] = { argv[0], "-a", "vc", "-i", "heuristic_092.hgr", "--localSearch_numIterations", "25", "--localSearch_LP", "--localSearch_numDeletions", "150" };
+    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "exact_001.hgr", "--localSearch_numIterations", "100000", "--localSearch_randomLP", "--localSearch_numDeletions", "5" };
     argc = sizeof(fakeArgv) / sizeof(fakeArgv[0]);
     argv = const_cast<char**>(fakeArgv);
 #endif
@@ -51,6 +52,7 @@ int main(int argc, char* argv[]) {
         ("localSearch_random", "Apply random local search")
         ("localSearch_randomTabu", "Apply random local search with tabu list")
         ("localSearch_LP", "Apply LP local search")
+        ("localSearch_randomLP", "Apply LP local search with random repair")
         ("i,input", "Use the specified input file instead of reading from stdin", cxxopts::value<std::string>())
         ("h,help", "Show this help message and exit");
 
@@ -126,7 +128,7 @@ int main(int argc, char* argv[]) {
     uint32_t numIterations = optionsResult["localSearch_numIterations"].as<uint32_t>();
     uint32_t numDeletions = optionsResult["localSearch_numDeletions"].as<uint32_t>();
     uint32_t tabuLength = optionsResult["localSearch_tabuLength"].as<uint32_t>();
-    if (optionsResult.count("localSearch_tabu") || optionsResult.count("localSearch_random") || optionsResult.count("localSearch_LP") || optionsResult.count("localSearch_randomTabu")) {
+    if (optionsResult.count("localSearch_tabu") || optionsResult.count("localSearch_random") || optionsResult.count("localSearch_randomLP") || optionsResult.count("localSearch_LP") || optionsResult.count("localSearch_randomTabu")) {
         std::unique_ptr<LocalSearchStrategy> localSearchStrategy;
         if (optionsResult.count("localSearch_tabu")) {
             state = std::make_unique<AdaptiveGreedyState>(state->hypergraph, optionsResult);
@@ -141,11 +143,20 @@ int main(int argc, char* argv[]) {
         else if (optionsResult.count("localSearch_LP")) {
             auto* vcState = dynamic_cast<VCState*>(state.get());
             GreedyState greedyState(state->hypergraph, {});
-			if (vcState == nullptr) {
+            if (vcState == nullptr) {
                 localSearchStrategy = std::make_unique<LPLocalSearch>(greedyState);
-			}
+            }
             else {
                 localSearchStrategy = std::make_unique<LPLocalSearch>(greedyState, vcState->getOrderedFractionalSolution());
+            }
+        }
+        else if (optionsResult.count("localSearch_randomLP")) {
+            auto* vcState = dynamic_cast<VCState*>(state.get());
+            if (vcState == nullptr) {
+                localSearchStrategy = std::make_unique<RandomLPLocalSearch>(state->hypergraph);
+            }
+            else {
+                localSearchStrategy = std::make_unique<RandomLPLocalSearch>(vcState->getOrderedFractionalSolution());
             }
         }
         else if (optionsResult.count("localSearch_randomTabu")) {
