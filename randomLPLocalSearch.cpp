@@ -4,29 +4,14 @@
 #include <optional>
 
 void RandomLPLocalSearch::removeNodes(uint32_t numNodesToRemove = 2) {
-	// Build sampling distribution
-	std::vector<double> inverseLPValues;
-	std::vector<Node> nodes;
-	inverseLPValues.reserve(fractionalLPSolution.size());
-	nodes.reserve(fractionalLPSolution.size());
-	for (const auto& [node, value] : fractionalLPSolution) {
-		if (algorithmState->getSolution().contains(node)) {
-			double inverseValue = 1 - fractionalLPSolution[node];
-			if (inverseValue > 0.0) {
-				inverseLPValues.push_back(inverseValue);
-				nodes.push_back(node);
-			}
-		}
-	}
-
 	// Sample nodes to remove
 	std::random_device rd;
 	std::mt19937 gen(rd());
-	std::discrete_distribution samplingDistribution = std::discrete_distribution(inverseLPValues.begin(), inverseLPValues.end());
+	std::discrete_distribution samplingDistribution = std::discrete_distribution(inverseFractionalLPValues.begin(), inverseFractionalLPValues.end());
 	std::vector<Node> nodesToRemove;
 	for (uint32_t i = 0; i < numNodesToRemove; i++) {
-		if (nodes.size() > nodesToRemove.size()) {
-			uint32_t nodeToRemove = nodes[samplingDistribution(gen)];
+		if (inverseFractionalLPNodes.size() > nodesToRemove.size()) {
+			uint32_t nodeToRemove = inverseFractionalLPNodes[samplingDistribution(gen)];
 			if (std::find(nodesToRemove.begin(), nodesToRemove.end(), nodeToRemove) == nodesToRemove.end()) {
 				nodesToRemove.push_back(nodeToRemove);
 			}
@@ -75,6 +60,13 @@ void RandomLPLocalSearch::addToSolution(Node node) {
 		algorithmState->hypergraph.incrementHitCount(edgeIndex);
 	}
 	algorithmState->solution.insert(node);
+
+	double inverseValue = 1 - fractionalLPSolution[node];
+	if (inverseValue > 0.0) {
+		inverseFractionalLPValues.push_back(inverseValue);
+		inverseFractionalLPNodes.push_back(node);
+		inverseFractionalLPNodesToIndex[node] = inverseFractionalLPValues.size() - 1;
+	}
 }
 
 void RandomLPLocalSearch::removeFromSolution(Node node) {
@@ -84,4 +76,33 @@ void RandomLPLocalSearch::removeFromSolution(Node node) {
 		}
 	}
 	algorithmState->solution.erase(node);
+
+	int indexToRemove = inverseFractionalLPNodesToIndex[node];
+	int lastIndex = inverseFractionalLPNodes.size() - 1;
+	if (indexToRemove != lastIndex) {
+		auto lastNode = inverseFractionalLPNodes.back();
+		auto lastValue = inverseFractionalLPValues.back();
+		inverseFractionalLPNodes[indexToRemove] = lastNode;
+		inverseFractionalLPValues[indexToRemove] = lastValue;
+		inverseFractionalLPNodesToIndex[lastNode] = indexToRemove;
+	}
+	inverseFractionalLPNodes.pop_back();
+	inverseFractionalLPValues.pop_back();
+	inverseFractionalLPNodesToIndex.erase(node);
+}
+
+void RandomLPLocalSearch::buildInverseFractionalLPSolution(Solution& solution) {
+	inverseFractionalLPValues.reserve(fractionalLPSolution.size());
+	inverseFractionalLPNodes.reserve(fractionalLPSolution.size());
+	inverseFractionalLPNodesToIndex.reserve(fractionalLPSolution.size());
+	for (const auto& [node, value] : fractionalLPSolution) {
+		if (solution.contains(node)) {
+			double inverseValue = 1 - fractionalLPSolution[node];
+			if (inverseValue > 0.0) {
+				inverseFractionalLPValues.push_back(inverseValue);
+				inverseFractionalLPNodes.push_back(node);
+				inverseFractionalLPNodesToIndex[node] = inverseFractionalLPValues.size() - 1;
+			}
+		}
+	}
 }

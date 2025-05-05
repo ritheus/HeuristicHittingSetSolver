@@ -153,10 +153,10 @@ int main(int argc, char* argv[]) {
         else if (optionsResult.count("localSearch_randomLP")) {
             auto* vcState = dynamic_cast<VCState*>(state.get());
             if (vcState == nullptr) {
-                localSearchStrategy = std::make_unique<RandomLPLocalSearch>(state->hypergraph);
+                localSearchStrategy = std::make_unique<RandomLPLocalSearch>(state->hypergraph, state->solution);
             }
             else {
-                localSearchStrategy = std::make_unique<RandomLPLocalSearch>(vcState->getOrderedFractionalSolution());
+                localSearchStrategy = std::make_unique<RandomLPLocalSearch>(vcState->getOrderedFractionalSolution(), state->solution);
             }
         }
         else if (optionsResult.count("localSearch_randomTabu")) {
