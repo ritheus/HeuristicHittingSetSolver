@@ -15,6 +15,10 @@ Solution LocalSearch::run(uint32_t numIterations, uint32_t numNodesToDelete) {
 		}
 	}
 
+	if (!strategy->algorithmState->hypergraph.isSolvedBy(bestSolution)) {
+		throw std::runtime_error("Solution not found");
+	}
+
 	return std::move(bestSolution);
 }
 
