@@ -2,16 +2,10 @@
 
 #include "neighborhoodStrategy.hpp"
 
-struct FlatNeighborhoodStrategy : NeighborhoodStrategy {
-	uint32_t numIterations;
-
-	FlatNeighborhoodStrategy(uint32_t numIterations, uint32_t numNodesToDelete) : numIterations(numIterations), NeighborhoodStrategy(numNodesToDelete) {}
+struct FlatNeighborhoodStrategy : NeighborhoodStrategy {	
+	FlatNeighborhoodStrategy(uint32_t numIterations, uint32_t numNodesToDelete) : NeighborhoodStrategy(numIterations, numNodesToDelete) {}
 
 	void update() override {
 		i++;
-	}
-
-	bool isDone() override {
-		return numIterations == i;
 	}
 };

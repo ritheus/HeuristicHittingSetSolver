@@ -15,6 +15,7 @@
 #include "randomTabuLocalSearch.hpp"
 #include "neighborhoodStrategy.hpp"
 #include "flatNeighborhoodStrategy.hpp"
+#include "shrinkingNeighborhoodStrategy.hpp"
 #include <iostream>
 #include <fstream>
 
@@ -24,7 +25,7 @@
 int main(int argc, char* argv[]) {
 #if _DEBUG
     //"--kernelization_unitEdgeRule", "--kernelization_vertexDominationRule", "--kernelization_edgeDominationRule"
-    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "exact_001.hgr", "--localSearch_numIterations", "100000", "--localSearch_random", "--localSearch_numDeletions", "5", "--localSearch_tabuLength", "0", "--neighborhood_flat"};
+    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "exact_001.hgr", "--localSearch_numIterations", "100000", "--localSearch_random", "--localSearch_numDeletions", "50", "--localSearch_tabuLength", "0", "--neighborhood_shrinking"};
     argc = sizeof(fakeArgv) / sizeof(fakeArgv[0]);
     argv = const_cast<char**>(fakeArgv);
 #endif
@@ -56,6 +57,9 @@ int main(int argc, char* argv[]) {
         ("localSearch_LP", "Apply LP local search")
         ("localSearch_randomLP", "Apply LP local search with random repair")
         ("neighborhood_flat", "Apply local search to a flat neighborhood")
+        ("neighborhood_shrinking", "Apply local search to a shrinking neighborhood")
+        ("neighborhood_minDeletions", "How many nodes to delete per local search iteration at least", cxxopts::value<uint32_t>()->default_value("5"))
+        ("neighborhood_stepInterval", "After how many iterations to reduce the number of deletions", cxxopts::value<uint32_t>()->default_value("1000"))
         ("i,input", "Use the specified input file instead of reading from stdin", cxxopts::value<std::string>())
         ("h,help", "Show this help message and exit");
 
@@ -169,8 +173,13 @@ int main(int argc, char* argv[]) {
 
         std::unique_ptr<NeighborhoodStrategy> neighborhoodStrategy;
         if (optionsResult.count("neighborhood_flat")) {
-			neighborhoodStrategy = std::make_unique<FlatNeighborhoodStrategy>(numIterations, numDeletions);
-		}
+            neighborhoodStrategy = std::make_unique<FlatNeighborhoodStrategy>(numIterations, numDeletions);
+        }
+        else if (optionsResult.count("neighborhood_shrinking")) {
+            uint32_t minNumNodesToDelete = optionsResult["neighborhood_minDeletions"].as<uint32_t>();
+            uint32_t stepInterval = optionsResult["neighborhood_stepInterval"].as<uint32_t>();
+            neighborhoodStrategy = std::make_unique<ShrinkingNeighborhoodStrategy>(numIterations, minNumNodesToDelete, numDeletions, stepInterval);
+        }
 
         solution = localSearch.run(std::move(neighborhoodStrategy));
 	}
