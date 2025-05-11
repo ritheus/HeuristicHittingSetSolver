@@ -5,6 +5,7 @@
 #include "cxxopts.hpp"
 #include "localSearchStrategy.hpp"
 #include "algorithmState.hpp"
+#include <string>
 #include <map>
 #include <optional>
 
@@ -23,7 +24,7 @@ struct LocalSearch {
 		optionsResult(optionsResult),
 		state(std::move(state)) {}
 
-	Solution run(uint32_t, uint32_t);
+	Solution run(uint32_t, uint32_t, uint32_t, std::string);
 	bool isAcceptable(Solution&);
 
 	// TODO

@@ -1,17 +1,25 @@
 #include "localSearch.hpp"
 #include "greedyState.hpp"
+#include "logger.hpp"
+#include <string>
 #include <map>
 #include <cmath>
 #include <random>
 
-Solution LocalSearch::run(uint32_t numIterations, uint32_t numNodesToDelete) {
+Solution LocalSearch::run(uint32_t numIterations, uint32_t minNumNodesToDelete, uint32_t maxNumNodesToDelete = 0, std::string neighborhoodStyle = "flat") {
+	uint32_t loggingInterval = 10;
+
 	strategy->initializeAlgorithmState(std::move(state));
 	for (uint32_t i = 0; i < numIterations; i++) {
-		strategy->removeNodes(numNodesToDelete);
+		strategy->removeNodes(minNumNodesToDelete);
 		strategy->repairPartialSolution();
 		Solution& solutionCandidate = strategy->algorithmState->getSolution();
 		if (isAcceptable(solutionCandidate)) {
 			bestSolution = solutionCandidate;
+		}
+		if (((i + 1) % loggingInterval) == 0 || i == 0) {
+			uint32_t log_i = i + 1;
+			LOG("Iteration " << log_i << " " << bestSolution.size());
 		}
 	}
 

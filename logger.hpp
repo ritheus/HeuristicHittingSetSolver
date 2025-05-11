@@ -2,8 +2,8 @@
 
 #include <iostream>
 
-#define LOGGING
-#define LOGGINGBNR
+//#define LOGGING
+//#define LOGGINGBNR
 
 
 #ifdef LOGGING

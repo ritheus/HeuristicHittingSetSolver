@@ -17,17 +17,17 @@
 #include <fstream>
 
 //#define LOGGING
-#define PROFILER
+//#define PROFILER
 
 int main(int argc, char* argv[]) {
 #if _DEBUG
     //"--kernelization_unitEdgeRule", "--kernelization_vertexDominationRule", "--kernelization_edgeDominationRule"
-    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "exact_001.hgr", "--localSearch_numIterations", "100000", "--localSearch_randomLP", "--localSearch_numDeletions", "4", "--localSearch_tabuLength", "0"};
+    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "exact_001.hgr", "--localSearch_numIterations", "100000", "--localSearch_random", "--localSearch_numDeletions", "4", "--localSearch_tabuLength", "0"};
     argc = sizeof(fakeArgv) / sizeof(fakeArgv[0]);
     argv = const_cast<char**>(fakeArgv);
 #endif
 #ifdef PROFILER
-    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "exact_001.hgr", "--localSearch_numIterations", "100000", "--localSearch_randomLP", "--localSearch_numDeletions", "5" };
+    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "coauth_3700k.hgr", "--localSearch_numIterations", "100000", "--localSearch_numDeletions", "5", "--kernelization_unitEdgeRule"};
     argc = sizeof(fakeArgv) / sizeof(fakeArgv[0]);
     argv = const_cast<char**>(fakeArgv);
 #endif
