@@ -5,6 +5,7 @@
 #include "cxxopts.hpp"
 #include "localSearchStrategy.hpp"
 #include "algorithmState.hpp"
+#include "neighborhoodStrategy.hpp"
 #include <string>
 #include <map>
 #include <optional>
@@ -24,7 +25,7 @@ struct LocalSearch {
 		optionsResult(optionsResult),
 		state(std::move(state)) {}
 
-	Solution run(uint32_t, uint32_t, uint32_t, std::string);
+	Solution run(std::unique_ptr<NeighborhoodStrategy>);
 	bool isAcceptable(Solution&);
 
 	// TODO
@@ -34,4 +35,5 @@ struct LocalSearch {
 	double potential(Node);
 	void updatePotential(const std::vector<Node>&, const std::vector<Node>&);
 	double harmonicApproximation(uint32_t);
+	void log_localsearch(uint32_t, uint32_t, Solution&);
 };

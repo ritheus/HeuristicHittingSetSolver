@@ -1,4 +1,5 @@
 #include "localSearch.hpp"
+#include "neighborhoodStrategy.hpp"
 #include "greedyState.hpp"
 #include "logger.hpp"
 #include <string>
@@ -6,21 +7,19 @@
 #include <cmath>
 #include <random>
 
-Solution LocalSearch::run(uint32_t numIterations, uint32_t minNumNodesToDelete, uint32_t maxNumNodesToDelete = 0, std::string neighborhoodStyle = "flat") {
+Solution LocalSearch::run(std::unique_ptr<NeighborhoodStrategy> neighborhoodStrategy) {
 	uint32_t loggingInterval = 10;
 
 	strategy->initializeAlgorithmState(std::move(state));
-	for (uint32_t i = 0; i < numIterations; i++) {
-		strategy->removeNodes(minNumNodesToDelete);
+	while (!neighborhoodStrategy->isDone()) {
+		strategy->removeNodes(neighborhoodStrategy->numNodesToDelete);
 		strategy->repairPartialSolution();
 		Solution& solutionCandidate = strategy->algorithmState->getSolution();
 		if (isAcceptable(solutionCandidate)) {
 			bestSolution = solutionCandidate;
 		}
-		if (((i + 1) % loggingInterval) == 0 || i == 0) {
-			uint32_t log_i = i + 1;
-			LOG("Iteration " << log_i << " " << bestSolution.size());
-		}
+		log_localsearch(neighborhoodStrategy->i, loggingInterval, bestSolution);
+		neighborhoodStrategy->update();
 	}
 
 	if (!strategy->algorithmState->hypergraph.isSolvedBy(bestSolution)) {
@@ -59,4 +58,11 @@ double LocalSearch::potential(Node node) {
 double LocalSearch::harmonicApproximation(uint32_t k) {
 	const double gamma = 0.57721566490153286060;
 	return std::log(k) + gamma + 1.0 / (2 * k) - 1.0 / (12.0 * k * k);
+}
+
+void LocalSearch::log_localsearch(uint32_t i, uint32_t loggingInterval, Solution& bestSolution) {
+	if (((i + 1) % loggingInterval) == 0 || i == 0) {
+		uint32_t log_i = i + 1;
+		LOG("Iteration " << log_i << " " << bestSolution.size());
+	}
 }

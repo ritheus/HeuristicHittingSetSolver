@@ -13,6 +13,8 @@
 #include "randomLPLocalSearch.hpp"
 #include "randomLocalSearch.hpp"
 #include "randomTabuLocalSearch.hpp"
+#include "neighborhoodStrategy.hpp"
+#include "flatNeighborhoodStrategy.hpp"
 #include <iostream>
 #include <fstream>
 
@@ -22,7 +24,7 @@
 int main(int argc, char* argv[]) {
 #if _DEBUG
     //"--kernelization_unitEdgeRule", "--kernelization_vertexDominationRule", "--kernelization_edgeDominationRule"
-    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "exact_001.hgr", "--localSearch_numIterations", "100000", "--localSearch_random", "--localSearch_numDeletions", "4", "--localSearch_tabuLength", "0"};
+    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "exact_001.hgr", "--localSearch_numIterations", "100000", "--localSearch_random", "--localSearch_numDeletions", "5", "--localSearch_tabuLength", "0", "--neighborhood_flat"};
     argc = sizeof(fakeArgv) / sizeof(fakeArgv[0]);
     argv = const_cast<char**>(fakeArgv);
 #endif
@@ -53,6 +55,7 @@ int main(int argc, char* argv[]) {
         ("localSearch_randomTabu", "Apply random local search with tabu list")
         ("localSearch_LP", "Apply LP local search")
         ("localSearch_randomLP", "Apply LP local search with random repair")
+        ("neighborhood_flat", "Apply local search to a flat neighborhood")
         ("i,input", "Use the specified input file instead of reading from stdin", cxxopts::value<std::string>())
         ("h,help", "Show this help message and exit");
 
@@ -163,7 +166,13 @@ int main(int argc, char* argv[]) {
             localSearchStrategy = std::make_unique<RandomTabuLocalSearch>(state->hypergraph, solution, tabuLength);
         }
         LocalSearch localSearch(std::move(state), std::move(localSearchStrategy), optionsResult);
-        solution = localSearch.run(numIterations, numDeletions);
+
+        std::unique_ptr<NeighborhoodStrategy> neighborhoodStrategy;
+        if (optionsResult.count("neighborhood_flat")) {
+			neighborhoodStrategy = std::make_unique<FlatNeighborhoodStrategy>(numIterations, numDeletions);
+		}
+
+        solution = localSearch.run(std::move(neighborhoodStrategy));
 	}
     
 
