@@ -26,7 +26,7 @@
 int main(int argc, char* argv[]) {
 #if _DEBUG
     //"--kernelization_unitEdgeRule", "--kernelization_vertexDominationRule", "--kernelization_edgeDominationRule"
-    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "exact_001.hgr", "--localSearch_numIterations", "100000", "--localSearch_random", "--localSearch_numDeletions", "50", "--localSearch_tabuLength", "0", "--neighborhood_oscillating", "--neighborhood_period", "1000"};
+    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "exact_001.hgr", "--localSearch_numIterations", "10000", "--localSearch_random", "--localSearch_numDeletions", "20", "--localSearch_tabuLength", "0", "--neighborhood_oscillating", "--neighborhood_period", "1000"};
     argc = sizeof(fakeArgv) / sizeof(fakeArgv[0]);
     argv = const_cast<char**>(fakeArgv);
 #endif

@@ -63,6 +63,6 @@ double LocalSearch::harmonicApproximation(uint32_t k) {
 void LocalSearch::log_localsearch(uint32_t i, uint32_t loggingInterval, Solution& bestSolution) {
 	if (((i + 1) % loggingInterval) == 0 || i == 0) {
 		uint32_t log_i = i + 1;
-		LOG("Iteration " << log_i << " " << bestSolution.size());
+		LOG_LOCALSEARCH("Iteration " << log_i << " " << bestSolution.size());
 	}
 }
