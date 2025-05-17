@@ -16,8 +16,8 @@ struct AdaptiveGreedyTabuLocalSearch : LocalSearchStrategy {
 
 	bool nodeHasSingleResponsibility(Hypergraph&, Solution&, Node, EdgeIndex);
 
-	void removeNodes(uint32_t) override;
-	void repairPartialSolution() override;
+	std::vector<Node> removeNodes(uint32_t) override;
+	std::vector<Node> repairPartialSolution() override;
 	void initializeAlgorithmState(std::unique_ptr<AlgorithmState>) override;
 	// tabu list
 	void addToTabuList(Node, uint32_t);

@@ -3,7 +3,7 @@
 #include <random>
 #include <optional>
 
-void RandomLPLocalSearch::removeNodes(uint32_t numNodesToRemove = 2) {
+std::vector<Node> RandomLPLocalSearch::removeNodes(uint32_t numNodesToRemove = 2) {
 	// Sample nodes to remove
 	std::random_device rd;
 	std::mt19937 gen(rd());
@@ -22,10 +22,13 @@ void RandomLPLocalSearch::removeNodes(uint32_t numNodesToRemove = 2) {
 	for (Node node : nodesToRemove) {
 		removeFromSolution(node);
 	}
+
+	return nodesToRemove;
 }
 
-void RandomLPLocalSearch::repairPartialSolution() {
+std::vector<Node> RandomLPLocalSearch::repairPartialSolution() {
 	std::unordered_set<EdgeIndex> hitEdges;
+	std::vector<Node> addedNodes;
 	for (EdgeIndex unhitEdgeIndex : unhitEdges) {
 		if (hitEdges.find(unhitEdgeIndex) != hitEdges.end()) {
 			continue;
@@ -36,6 +39,7 @@ void RandomLPLocalSearch::repairPartialSolution() {
 		std::uniform_int_distribution<> dist(0, edge.size() - 1);
 		Node node = edge[dist(gen)];
 		addToSolution(node);
+		addedNodes.push_back(node);
 		for (EdgeIndex incidentEdgeIndex : algorithmState->hypergraph.getIncidentEdgeIndizes(node)) {
 			hitEdges.insert(incidentEdgeIndex);
 		}
@@ -49,6 +53,7 @@ void RandomLPLocalSearch::repairPartialSolution() {
 	}
 
 	unhitEdges.clear();
+	return addedNodes;
 }
 
 void RandomLPLocalSearch::initializeAlgorithmState(std::unique_ptr<AlgorithmState> state) {

@@ -3,7 +3,7 @@
 #include <random>
 #include <optional>
 
-void LPLocalSearch::removeNodes(uint32_t numNodesToRemove = 2) {
+std::vector<Node> LPLocalSearch::removeNodes(uint32_t numNodesToRemove = 2) {
 	// Build sampling distribution
 	std::vector<double> inverseLPValues;
 	std::vector<Node> nodes;
@@ -38,13 +38,16 @@ void LPLocalSearch::removeNodes(uint32_t numNodesToRemove = 2) {
 		algorithmState->removeFromSolution(node);
 		greedyState.removeFromSolution(node);
 	}
+
+	return nodesToRemove;
 }
 
-void LPLocalSearch::repairPartialSolution() {
+std::vector<Node> LPLocalSearch::repairPartialSolution() {
 	std::vector<Node> addedNodes = greedyState.repairSolution();
 	for (Node node : addedNodes) {
 		algorithmState->addToSolution(node);
 	}
+	return addedNodes;
 }
 
 void LPLocalSearch::initializeAlgorithmState(std::unique_ptr<AlgorithmState> state) {

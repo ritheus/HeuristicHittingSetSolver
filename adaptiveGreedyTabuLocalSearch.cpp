@@ -23,16 +23,18 @@ bool AdaptiveGreedyTabuLocalSearch::nodeHasSingleResponsibility(Hypergraph& hype
 	return true;
 }
 
-void AdaptiveGreedyTabuLocalSearch::removeNodes(uint32_t numNodesToRemove = 2) {
+std::vector<Node> AdaptiveGreedyTabuLocalSearch::removeNodes(uint32_t numNodesToRemove = 2) {
 	// Remove nodes
 	std::unordered_map<Node, uint32_t> toBeReinserted; // vector is better
 	Node nodeToRemove;
+	std::vector<Node> removedNodes;
 	uint32_t i = 0;
 	while (i < numNodesToRemove && algorithmState->solution.solutionVector.size() > 0) {
 		nodeToRemove = solutionNodeSingleResponsibilities.top().key;
 		if (canBeBanned(nodeToRemove)) {
 			addToTabuList(nodeToRemove, tabuLength);
 			algorithmState->removeFromSolution(nodeToRemove);
+			removedNodes.push_back(nodeToRemove);
 			solutionNodeSingleResponsibilities.pop();
 			i++;
 		}
@@ -43,6 +45,8 @@ void AdaptiveGreedyTabuLocalSearch::removeNodes(uint32_t numNodesToRemove = 2) {
 		if (solutionNodeSingleResponsibilities.size() == 0) {
 			break;
 		}
+
+		return removedNodes;
 	}
 
 	// Fix solutionNodeSingleResponsibilities
@@ -51,8 +55,8 @@ void AdaptiveGreedyTabuLocalSearch::removeNodes(uint32_t numNodesToRemove = 2) {
 	}
 }
 
-void AdaptiveGreedyTabuLocalSearch::repairPartialSolution() {
-	algorithmState->calculateSolution();
+std::vector<Node> AdaptiveGreedyTabuLocalSearch::repairPartialSolution() {
+	algorithmState->repairSolution();
 	auto* adaptiveState = dynamic_cast<AdaptiveGreedyState*>(algorithmState.get()); // static_cast is faster
 	if (algorithmState == nullptr) {
 		throw std::runtime_error("TabuLocalSearch only works with AdaptiveGreedyState");

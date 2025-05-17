@@ -11,14 +11,16 @@ Solution LocalSearch::run(std::unique_ptr<NeighborhoodStrategy> neighborhoodStra
 	uint32_t loggingInterval = 10;
 	uint32_t noChangeCounter = 0;
 	uint32_t adaptThreshold = 1500000;
+	std::vector<Node> removedNodes;
+	std::vector<Node> addedNodes;
 
 	strategy->initializeAlgorithmState(std::move(state));
 	while (!neighborhoodStrategy->isDone()) {
-		strategy->removeNodes(neighborhoodStrategy->numNodesToDelete);
-		strategy->repairPartialSolution();
+		removedNodes = strategy->removeNodes(neighborhoodStrategy->numNodesToDelete);
+		addedNodes = strategy->repairPartialSolution();
 		Solution& solutionCandidate = strategy->algorithmState->getSolution();
 		if (isAcceptable(solutionCandidate)) {
-			bestSolution = solutionCandidate;
+			transformSolution(removedNodes, addedNodes);
 		}
 		log_localsearch(neighborhoodStrategy->i, loggingInterval, bestSolution);
 		neighborhoodStrategy->update();
@@ -38,6 +40,14 @@ bool LocalSearch::isAcceptable(Solution& solutionCandidate) {
 	return solutionCandidate.size() <= bestSolution.size();
 }
 
+void LocalSearch::transformSolution(std::vector<Node>& removedNodes, std::vector<Node>& addedNodes) {
+	for (Node node : removedNodes) {
+		bestSolution.erase(node);
+	}
+	for (Node node : addedNodes) {
+		bestSolution.insert(node);
+	}
+}
 
 // TODO
 
