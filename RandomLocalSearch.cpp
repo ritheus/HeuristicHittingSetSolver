@@ -9,14 +9,17 @@ std::vector<Node> RandomLocalSearch::removeNodes(uint32_t numNodesToRemove = 2) 
 	std::uniform_int_distribution<> dist(0, algorithmState->solution.solutionVector.size() - 1);
 	uint32_t sampleIndex = 0;
 	Node nodeToRemove;
+	bool removed;
 	std::vector<Node> removedNodes;
 	for (uint32_t i = 0; i < numNodesToRemove; i++) {
 		do {
 			sampleIndex = dist(gen);
 		} while (sampleIndex >= algorithmState->solution.solutionVector.size());
 		nodeToRemove = algorithmState->solution.solutionVector[sampleIndex];
-		algorithmState->removeFromSolution(nodeToRemove);
-		removedNodes.push_back(nodeToRemove);
+		removed = algorithmState->removeFromSolution(nodeToRemove);
+		if (removed) {
+			removedNodes.push_back(nodeToRemove);
+		}
 	}
 
 	return removedNodes;

@@ -77,7 +77,8 @@ void AdaptiveGreedyState::setSolution(Solution solution) {
 	}
 }
 
-void AdaptiveGreedyState::removeFromSolution(Node node) {
+bool AdaptiveGreedyState::removeFromSolution(Node node) {
+    if (!solution.contains(node)) return false;
     solution.erase(node);
     for (EdgeIndex edgeIndex : hypergraph.getIncidentEdgeIndizes(node)) {
         nodesHittingEdge[edgeIndex].erase(std::find(nodesHittingEdge[edgeIndex].begin(), nodesHittingEdge[edgeIndex].end(), node)); // O(deg_edge)
@@ -99,6 +100,7 @@ void AdaptiveGreedyState::removeFromSolution(Node node) {
     } // O(deg_node) * O(deg_edge) * O(log n)
 
     clearEdgesHitByNode(node); // O(deg_node)
+    return true;
 }
 
 bool AdaptiveGreedyState::shrinkSolutionIfApplicable(uint32_t highestImpact) {

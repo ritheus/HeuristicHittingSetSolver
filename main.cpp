@@ -22,17 +22,17 @@
 #include <fstream>
 
 //#define LOGGING
-#define PROFILER
+//#define PROFILER
 
 int main(int argc, char* argv[]) {
 #if _DEBUG
     //"--kernelization_unitEdgeRule", "--kernelization_vertexDominationRule", "--kernelization_edgeDominationRule"
-    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "heuristic_094.hgr", "--localSearch_random", "--localSearch_numIterations", "10000", "--neighborhood_minDeletions", "5", "--localSearch_numDeletions", "100", "--kernelization_unitEdgeRule", "--neighborhood_shrinking_oscillating", "--neighborhood_period", "5000", "--neighborhood_stepInterval", "800" };
+    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "exact_001.hgr", "--localSearch_random", "--localSearch_numIterations", "10", "--neighborhood_minDeletions", "5", "--localSearch_numDeletions", "10", "--kernelization_unitEdgeRule", "--neighborhood_shrinking_oscillating", "--neighborhood_period", "5", "--neighborhood_stepInterval", "5" };
     argc = sizeof(fakeArgv) / sizeof(fakeArgv[0]);
     argv = const_cast<char**>(fakeArgv);
 #endif
 #ifdef PROFILER
-    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "heuristic_094.hgr", "--localSearch_random", "--localSearch_numIterations", "1000", "--neighborhood_minDeletions", "5", "--localSearch_numDeletions", "100", "--kernelization_unitEdgeRule", "--neighborhood_shrinking_oscillating", "--neighborhood_period", "5000", "--neighborhood_stepInterval", "100"};
+    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "heuristic_094.hgr", "--localSearch_random", "--localSearch_numIterations", "1000", "--neighborhood_minDeletions", "5", "--localSearch_numDeletions", "1000", "--kernelization_unitEdgeRule", "--neighborhood_shrinking_oscillating", "--neighborhood_period", "800", "--neighborhood_stepInterval", "800"};
     argc = sizeof(fakeArgv) / sizeof(fakeArgv[0]);
     argv = const_cast<char**>(fakeArgv);
 #endif

@@ -324,6 +324,7 @@ public:
 
     bool isSolvedBy(Solution& solution) const {
         std::vector<bool> isEdgeHit(getMaximumEdgeIndex() + 1, false);
+        bool solved = true;
         for (Node node : solution.getSolution()) {
             for (EdgeIndex edgeIndex : incidentEdgeIndizes[node]) {
 				isEdgeHit[edgeIndex] = true;
@@ -331,10 +332,10 @@ public:
 		}
 		for (EdgeIndex edgeIndex = 0; edgeIndex < edges.size(); edgeIndex++) {
 			if (!isEdgeHit[edgeIndex]) {
-				return false;
+				solved = false;
 			}
         }
-		return true;
+		return solved;
     }
 
     void calculateMaximumVertexDegree() {

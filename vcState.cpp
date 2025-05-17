@@ -87,13 +87,15 @@ void VCState::addToSolution(Node node) {
 	}
 }
 
-void VCState::removeFromSolution(Node node) {
+bool VCState::removeFromSolution(Node node) {
 	if (solution.contains(node)) {
 		solution.erase(node);
 		for (EdgeIndex edgeIndex : hypergraph.getIncidentEdgeIndizes(node)) {
 			hypergraph.decrementHitCount(edgeIndex);
 		}
+		return true;
 	}
+	return false;
 }
 
 std::map<Node, double> VCState::getOrderedFractionalSolution() {

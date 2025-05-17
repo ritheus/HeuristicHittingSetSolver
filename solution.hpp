@@ -8,23 +8,23 @@ struct Solution {
 	std::unordered_set<Node> solutionSet;
 	std::unordered_map<Node, uint32_t> nodeToIndex;
 	std::vector<Node> solutionVector;
-	Node mostRecentlyAddedNode;
 
 	Solution() {}
 
-	void insert(Node node) {
-		solutionSet.insert(node);
+	void insert(const Node& node) {
+		auto [_, inserted] = solutionSet.insert(node);
+		if (!inserted) return;
+
 		solutionVector.push_back(node);
-		nodeToIndex.insert({ node, solutionVector.size() - 1 });
-		mostRecentlyAddedNode = node;
+		nodeToIndex[node] = solutionVector.size() - 1;
 	}
 
 	void erase(Node node) {
 		auto it = nodeToIndex.find(node);
 		if (it == nodeToIndex.end()) return;
 
-		uint32_t index = it->second;
-		uint32_t lastIndex = solutionVector.size() - 1;
+		std::size_t index = it->second;
+		std::size_t lastIndex = solutionVector.size() - 1;
 
 		if (index != lastIndex) {
 			Node lastNode = solutionVector[lastIndex];

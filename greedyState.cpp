@@ -92,8 +92,8 @@ void GreedyState::addToSolution(Node node) {
 	} // O(deg_node * deg_edge * log n)
 }
 
-void GreedyState::removeFromSolution(Node node) {
-	if (!solution.contains(node)) return;
+bool GreedyState::removeFromSolution(Node node) {
+	if (!solution.contains(node)) return false;
 	solution.erase(node);
 	for (EdgeIndex edgeIndex : hypergraph.getIncidentEdgeIndizes(node)) {
 		if (hypergraph.decrementHitCount(edgeIndex)) { // O(deg_edge * log n)
@@ -102,6 +102,7 @@ void GreedyState::removeFromSolution(Node node) {
 			} // O(deg_edge * log n)
 		}
 	}
+	return true;
 }
 
 void GreedyState::banFromSolution(Node node) {

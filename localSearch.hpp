@@ -11,19 +11,19 @@
 #include <optional>
 
 struct LocalSearch {
-	Solution bestSolution;
 	std::unique_ptr<LocalSearchStrategy> strategy;
-	std::unique_ptr<AlgorithmState> state;
+	Solution bestSolution;
 	cxxopts::ParseResult optionsResult;
+	std::unique_ptr<AlgorithmState> state;
 
 	LocalSearch(
 		std::unique_ptr<AlgorithmState> state,
 		std::unique_ptr<LocalSearchStrategy> strategy, 
 		const cxxopts::ParseResult& optionsResult
 	) : strategy(std::move(strategy)), 
+		state(std::move(state)),
 		bestSolution(state->getSolution()), 
-		optionsResult(optionsResult),
-		state(std::move(state)) {}
+		optionsResult(optionsResult) {}
 
 	Solution run(std::unique_ptr<NeighborhoodStrategy>);
 	bool isAcceptable(Solution&);
