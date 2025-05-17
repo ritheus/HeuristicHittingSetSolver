@@ -17,21 +17,22 @@
 #include "flatNeighborhoodStrategy.hpp"
 #include "shrinkingNeighborhoodStrategy.hpp"
 #include "oscillatingNeighborhoodStrategy.hpp"
+#include "shrinkAndOscillateNeighborhoodStrategy.hpp"
 #include <iostream>
 #include <fstream>
 
 //#define LOGGING
-//#define PROFILER
+#define PROFILER
 
 int main(int argc, char* argv[]) {
 #if _DEBUG
     //"--kernelization_unitEdgeRule", "--kernelization_vertexDominationRule", "--kernelization_edgeDominationRule"
-    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "exact_001.hgr", "--localSearch_numIterations", "10000", "--localSearch_random", "--localSearch_numDeletions", "20", "--localSearch_tabuLength", "0", "--neighborhood_oscillating", "--neighborhood_period", "1000"};
+    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "heuristic_094.hgr", "--localSearch_random", "--localSearch_numIterations", "10000", "--neighborhood_minDeletions", "5", "--localSearch_numDeletions", "100", "--kernelization_unitEdgeRule", "--neighborhood_shrinking_oscillating", "--neighborhood_period", "5000", "--neighborhood_stepInterval", "800" };
     argc = sizeof(fakeArgv) / sizeof(fakeArgv[0]);
     argv = const_cast<char**>(fakeArgv);
 #endif
 #ifdef PROFILER
-    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "coauth_3700k.hgr", "--localSearch_numIterations", "100000", "--localSearch_numDeletions", "5", "--kernelization_unitEdgeRule"};
+    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "heuristic_094.hgr", "--localSearch_random", "--localSearch_numIterations", "1000", "--neighborhood_minDeletions", "5", "--localSearch_numDeletions", "100", "--kernelization_unitEdgeRule", "--neighborhood_shrinking_oscillating", "--neighborhood_period", "5000", "--neighborhood_stepInterval", "100"};
     argc = sizeof(fakeArgv) / sizeof(fakeArgv[0]);
     argv = const_cast<char**>(fakeArgv);
 #endif
@@ -60,6 +61,7 @@ int main(int argc, char* argv[]) {
         ("neighborhood_flat", "Apply local search to a flat neighborhood")
         ("neighborhood_shrinking", "Apply local search to a shrinking neighborhood")
         ("neighborhood_oscillating", "Apply local search to an oscillating neighborhood")
+        ("neighborhood_shrinking_oscillating", "Apply local search to a first shrinking, then oscillating neighborhood")
         ("neighborhood_minDeletions", "How many nodes to delete per local search iteration at least", cxxopts::value<uint32_t>()->default_value("5"))
         ("neighborhood_stepInterval", "After how many iterations to reduce the number of deletions", cxxopts::value<uint32_t>()->default_value("1000"))
         ("neighborhood_period", "After how many iterations to cycle the number of deletions", cxxopts::value<uint32_t>()->default_value("1000"))
@@ -187,6 +189,12 @@ int main(int argc, char* argv[]) {
             uint32_t minNumNodesToDelete = optionsResult["neighborhood_minDeletions"].as<uint32_t>();
             uint32_t period = optionsResult["neighborhood_period"].as<uint32_t>();
             neighborhoodStrategy = std::make_unique<OscillatingNeighborhoodStrategy>(numIterations, minNumNodesToDelete, numDeletions, period);
+        }
+        else if (optionsResult.count("neighborhood_shrinking_oscillating")) {
+            uint32_t minNumNodesToDelete = optionsResult["neighborhood_minDeletions"].as<uint32_t>();
+            uint32_t period = optionsResult["neighborhood_period"].as<uint32_t>();
+            uint32_t stepInterval = optionsResult["neighborhood_stepInterval"].as<uint32_t>();
+            neighborhoodStrategy = std::make_unique<ShrinkAndOscillateNeighborhoodStrategy>(numIterations, minNumNodesToDelete, numDeletions, stepInterval, period);
         }
 
         solution = localSearch.run(std::move(neighborhoodStrategy));

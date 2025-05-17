@@ -4,7 +4,7 @@
 
 //#define LOGGING
 //#define LOGGINGBNR
-#define LOG_LOCALSEARCH
+//#define LOG_LOCALSEARCH
 
 
 #ifdef LOGGING
@@ -21,4 +21,6 @@
 
 #ifdef LOG_LOCALSEARCH
 #define LOG_LOCALSEARCH(x) std::cerr << x << std::endl;
+#else
+#define LOG_LOCALSEARCH(x)
 #endif

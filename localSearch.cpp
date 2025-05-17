@@ -9,6 +9,8 @@
 
 Solution LocalSearch::run(std::unique_ptr<NeighborhoodStrategy> neighborhoodStrategy) {
 	uint32_t loggingInterval = 10;
+	uint32_t noChangeCounter = 0;
+	uint32_t adaptThreshold = 1500000;
 
 	strategy->initializeAlgorithmState(std::move(state));
 	while (!neighborhoodStrategy->isDone()) {
@@ -20,6 +22,9 @@ Solution LocalSearch::run(std::unique_ptr<NeighborhoodStrategy> neighborhoodStra
 		}
 		log_localsearch(neighborhoodStrategy->i, loggingInterval, bestSolution);
 		neighborhoodStrategy->update();
+		if (neighborhoodStrategy->i == adaptThreshold) {
+			neighborhoodStrategy->adapt();
+		}
 	}
 
 	if (!strategy->algorithmState->hypergraph.isSolvedBy(bestSolution)) {

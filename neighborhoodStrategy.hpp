@@ -12,6 +12,7 @@ struct NeighborhoodStrategy {
 	NeighborhoodStrategy(uint32_t numIterations, uint32_t numNodesToDelete) : numNodesToDelete(numNodesToDelete), numIterations(numIterations) {}
 
 	virtual void update() = 0;
+	virtual void adapt() {}
 	virtual bool isDone() {
 		return i == numIterations;
 	}
