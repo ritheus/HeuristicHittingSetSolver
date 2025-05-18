@@ -3,10 +3,11 @@
 #include "aliases.hpp"
 #include <unordered_set>
 #include <unordered_map>
+#include <vector>
 
 struct Solution {
 	std::unordered_set<Node> solutionSet;
-	std::unordered_map<Node, uint32_t> nodeToIndex;
+	std::unordered_map<Node, size_t> nodeToIndex;
 	std::vector<Node> solutionVector;
 
 	Solution() {}
@@ -55,5 +56,26 @@ struct Solution {
 
 	bool operator==(const Solution& other) const {
 		return solutionSet == other.solutionSet;
+	}
+
+	bool operator!=(const Solution& other) const {
+		return solutionSet != other.solutionSet;
+	}
+
+	std::unordered_set<Node> diff(const Solution& other) const {
+		std::unordered_set<Node> diffSet;
+
+		for (const Node& node : solutionSet) {
+			if (other.solutionSet.find(node) == other.solutionSet.end()) {
+				diffSet.insert(node);
+			}
+		}
+		for (const Node& node : other.solutionSet) {
+			if (solutionSet.find(node) == solutionSet.end()) {
+				diffSet.insert(node);
+			}
+		}
+
+		return diffSet;
 	}
 };

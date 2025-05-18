@@ -21,7 +21,7 @@ public:
     AdaptiveGreedyState(Hypergraph&, const cxxopts::ParseResult&); // O(n * log n + m * deg_edge)
 
     Solution calculateSolution(bool=true);
-    void addToSolution(Node) override; // O(deg_node * deg_edge * log n)
+    bool addToSolution(Node) override; // O(deg_node * deg_edge * log n)
     virtual void setSolution(Solution) override;
     bool removeFromSolution(Node);
     bool shrinkSolutionIfApplicable(uint32_t);

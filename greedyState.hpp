@@ -19,7 +19,7 @@ public:
 	virtual std::vector<Node> repairSolution() override;
 	void deleteNodes(const std::vector<Node>&);
 	void deleteEdges(std::vector<EdgeIndex>&) override;
-	void addToSolution(Node) override;
+	bool addToSolution(Node) override;
 	bool removeFromSolution(Node) override;
 	void banFromSolution(Node) override;
 	void setSolution(Solution solution);

@@ -27,7 +27,7 @@ Solution GreedyState::calculateSolution(bool applyKernelization) {
 	if (applyKernelization) kernelization::applyKernelization(*this, optionsResult);
 
 	while (!hypergraph.isSolved() && keep_running()) { // O(1)
-		uint32_t oldSolutionSize = getSolution().size();
+		//uint32_t oldSolutionSize = getSolution().size();
 		auto [highestPriorityNodeGain, highestPriorityNode] = getHighestImpactNode(); // O(1)
 		addToSolution(highestPriorityNode); // O(deg_node * deg_edge * log n)
 		//if (oldSolutionSize == getSolution().size()) {
@@ -79,8 +79,8 @@ void GreedyState::setSolution(Solution newSolution) {
 /**
 *	Adds the given node to the solution, marks the incident edges as hit and updates the potential impact of all incident edges.
 */
-void GreedyState::addToSolution(Node node) {
-	if (solution.contains(node)) return;
+bool GreedyState::addToSolution(Node node) {
+	if (solution.contains(node)) return false;
 	updateNodeAge(node);
 	solution.insert(node);
 	for (EdgeIndex edgeIndex : hypergraph.getIncidentEdgeIndizes(node)) {
@@ -90,6 +90,7 @@ void GreedyState::addToSolution(Node node) {
 			} // O(deg_edge * log n)
 		}
 	} // O(deg_node * deg_edge * log n)
+	return true;
 }
 
 bool GreedyState::removeFromSolution(Node node) {

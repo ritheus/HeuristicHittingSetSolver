@@ -10,7 +10,7 @@ struct VCState : AlgorithmState {
 	VCState(NumNodes, NumEdges, std::vector<Edge>&&, const cxxopts::ParseResult&);
 
 	Solution calculateSolution(bool = true) override;
-	void addToSolution(Node) override;
+	bool addToSolution(Node) override;
 	bool removeFromSolution(Node) override;
 	void deleteNodes(const std::vector<Node>&) override;
 	void deleteEdges(std::vector<EdgeIndex>&) override;

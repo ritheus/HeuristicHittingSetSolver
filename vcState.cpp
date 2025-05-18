@@ -77,14 +77,16 @@ bool VCState::isApproximately(double a, double b, double epsilon) {
 	return std::abs(a - b) < epsilon;
 }
 
-void VCState::addToSolution(Node node) {
+bool VCState::addToSolution(Node node) {
 	if (!solution.contains(node)) {
 		updateNodeAge(node);
 		solution.insert(node);
 		for (EdgeIndex edgeIndex : hypergraph.getIncidentEdgeIndizes(node)) {
 			hypergraph.incrementHitCount(edgeIndex);
 		}
+		return true;
 	}
+	return false;
 }
 
 bool VCState::removeFromSolution(Node node) {

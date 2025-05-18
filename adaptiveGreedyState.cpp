@@ -47,7 +47,8 @@ Solution AdaptiveGreedyState::calculateSolution(bool applyKernelization) {
     return getSolution();
 }
 
-void AdaptiveGreedyState::addToSolution(Node node) {
+bool AdaptiveGreedyState::addToSolution(Node node) {
+    if (solution.contains(node)) return false;
     updateNodeAge(node);
     solution.insert(node);
 
@@ -69,6 +70,8 @@ void AdaptiveGreedyState::addToSolution(Node node) {
             } // O(deg_edge * log n)
         }
     } // O(deg_node * deg_edge * log n)
+
+	return true;
 }
 
 void AdaptiveGreedyState::setSolution(Solution solution) {

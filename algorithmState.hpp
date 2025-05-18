@@ -65,7 +65,7 @@ struct AlgorithmState {
 	virtual std::vector<Node> repairSolution() {
 		throw std::runtime_error("repairSolution not implemented");
 	}
-	virtual void addToSolution(Node) = 0;
+	virtual bool addToSolution(Node) = 0;
 	virtual bool removeFromSolution(Node) {
 		throw std::runtime_error("removeFromSolution not implemented");
 	}

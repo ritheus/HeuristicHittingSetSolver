@@ -11,16 +11,20 @@ Solution LocalSearch::run(std::unique_ptr<NeighborhoodStrategy> neighborhoodStra
 	uint32_t loggingInterval = 10;
 	uint32_t noChangeCounter = 0;
 	uint32_t adaptThreshold = 1500000;
-	std::vector<Node> removedNodes;
-	std::vector<Node> addedNodes;
+	std::unordered_set<Node> removedNodes;
+	std::unordered_set<Node> addedNodes;
+	std::vector<Node> removedNodesVector;
+	std::vector<Node> addedNodesVector;
 
 	strategy->initializeAlgorithmState(std::move(state));
 	while (!neighborhoodStrategy->isDone()) {
-		removedNodes = strategy->removeNodes(neighborhoodStrategy->numNodesToDelete);
-		addedNodes = strategy->repairPartialSolution();
+		removedNodesVector = strategy->removeNodes(neighborhoodStrategy->numNodesToDelete);
+		addedNodesVector = strategy->repairPartialSolution();
 		Solution& solutionCandidate = strategy->algorithmState->getSolution();
+		updateDelta(removedNodesVector, addedNodesVector, removedNodes, addedNodes);
 		if (isAcceptable(solutionCandidate)) {
 			transformSolution(removedNodes, addedNodes);
+			//bestSolution = solutionCandidate;
 		}
 		log_localsearch(neighborhoodStrategy->i, loggingInterval, bestSolution);
 		neighborhoodStrategy->update();
@@ -36,11 +40,35 @@ Solution LocalSearch::run(std::unique_ptr<NeighborhoodStrategy> neighborhoodStra
 	return std::move(bestSolution);
 }
 
-bool LocalSearch::isAcceptable(Solution& solutionCandidate) {
-	return solutionCandidate.size() <= bestSolution.size();
+/*
+* We have to always keep removedNodes and addedNodes up to date, while we only have to update the best solution when we find a better one
+* So this method makes it possible to keep track of the difference from the old best solution to the upcoming best solution
+*/
+bool LocalSearch::updateDelta(std::vector<Node>& removedNodesVector, std::vector<Node>& addedNodesVector, std::unordered_set<Node>& removedNodes, std::unordered_set<Node>& addedNodes) {
+	for (Node node : removedNodesVector) {
+		if (addedNodes.find(node) != addedNodes.end()) {
+			removedNodes.insert(node);
+		}
+		else {
+			addedNodes.erase(node);
+		}
+	}
+	for (Node node : addedNodesVector) {
+		if (removedNodes.find(node) != removedNodes.end()) {
+			addedNodes.insert(node);
+		}
+		else {
+			removedNodes.erase(node);
+		}
+	}
+	return true;
 }
 
-void LocalSearch::transformSolution(std::vector<Node>& removedNodes, std::vector<Node>& addedNodes) {
+bool LocalSearch::isAcceptable(Solution& solutionCandidate) {
+	return solutionCandidate.size() <= bestSolution.size() && strategy->algorithmState->hypergraph.isSolved();
+}
+
+void LocalSearch::transformSolution(std::unordered_set<Node>& removedNodes, std::unordered_set<Node>& addedNodes) {
 	for (Node node : removedNodes) {
 		bestSolution.erase(node);
 	}

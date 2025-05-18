@@ -12,7 +12,7 @@ public:
 	BranchAndReduceState(NumNodes, NumEdges, std::vector<Edge>&&, const cxxopts::ParseResult&);
 
 	Solution calculateSolution(bool=false) override;
-	void addToSolution(Node) override;
+	bool addToSolution(Node) override;
 	void deleteNodes(const std::vector<Node>&) override;
 	void deleteEdges(std::vector<EdgeIndex>&) override;
 

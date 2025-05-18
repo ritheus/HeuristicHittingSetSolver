@@ -135,8 +135,8 @@ Node BranchAndReduceState::chooseNextNode(GreedyState& state) {
 
 
 
-void BranchAndReduceState::addToSolution(Node) {
-
+bool BranchAndReduceState::addToSolution(Node) {
+	return false;
 }
 
 void BranchAndReduceState::deleteNodes(const std::vector<Node>&) {
