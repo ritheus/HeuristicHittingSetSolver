@@ -6,15 +6,19 @@
 std::vector<Node> RandomLocalSearch::removeNodes(uint32_t numNodesToRemove = 2) {
 	std::random_device rd;
 	std::mt19937 gen(rd());
-	std::uniform_int_distribution<> dist(0, algorithmState->solution.solutionVector.size() - 1);
+	std::uniform_int_distribution<std::size_t> dist(0, algorithmState->solution.solutionVector.size() - 1);
 	uint32_t sampleIndex = 0;
 	Node nodeToRemove;
 	bool removed;
 	std::vector<Node> removedNodes;
 	for (uint32_t i = 0; i < numNodesToRemove; i++) {
 		do {
+			dist = std::uniform_int_distribution<std::size_t>(0, algorithmState->solution.solutionVector.size() - 1);
 			sampleIndex = dist(gen);
-		} while (sampleIndex >= algorithmState->solution.solutionVector.size());
+		} while (sampleIndex >= algorithmState->solution.solutionVector.size() && algorithmState->solution.solutionVector.size() > 0);
+		if (algorithmState->solution.solutionVector.size() == 0) {
+			break;
+		}
 		nodeToRemove = algorithmState->solution.solutionVector[sampleIndex];
 		removed = algorithmState->removeFromSolution(nodeToRemove);
 		if (removed) {
