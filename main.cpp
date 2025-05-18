@@ -118,7 +118,7 @@ int main(int argc, char* argv[]) {
         };
     std::string algorithm = toLower(optionsResult["algorithm"].as<std::string>());
 
-    Solution solution;
+    Solution solution = Solution(n);
     std::unique_ptr<AlgorithmState> state;
     if (algorithm == "greedy") {
         state = std::make_unique<GreedyState>(n, m, std::move(setSystem), optionsResult); // O(n * log n + m * deg_edge)

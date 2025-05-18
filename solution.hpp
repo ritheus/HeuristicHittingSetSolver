@@ -12,6 +12,12 @@ struct Solution {
 
 	Solution() {}
 
+	Solution(uint32_t n) {
+		solutionVector.reserve(n);
+		nodeToIndex.reserve(n);
+		solutionSet.reserve(n);
+	}
+
 	void insert(const Node& node) {
 		auto [_, inserted] = solutionSet.insert(node);
 		if (!inserted) return;

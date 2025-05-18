@@ -40,6 +40,7 @@ Solution GreedyState::calculateSolution(bool applyKernelization) {
 
 std::vector<Node> GreedyState::repairSolution() {
 	std::vector<Node> addedNodes;
+	addedNodes.reserve(hypergraph.getNumUnhitEdges());
 	while (!hypergraph.isSolved() && keep_running()) { // O(1)
 		auto [highestPriorityNodeGain, highestPriorityNode] = getHighestImpactNode();
 		addToSolution(highestPriorityNode); // O(deg_node * deg_edge * log n)
@@ -112,7 +113,8 @@ void GreedyState::banFromSolution(Node node) {
 }
 
 std::pair<uint32_t, Node> GreedyState::getHighestImpactNode() {
-	std::vector<std::pair<uint32_t, Node>> toBeReinserted;
+	return potentialNodeImpact.top();
+	/*std::vector<std::pair<uint32_t, Node>> toBeReinserted;
 	do {
 		Node node = potentialNodeImpact.top().key;
 		if (std::find(bannedNodes.begin(), bannedNodes.end(), node) != bannedNodes.end()) {
@@ -126,7 +128,7 @@ std::pair<uint32_t, Node> GreedyState::getHighestImpactNode() {
 			return potentialNodeImpact.top();
 		}
 	} while (potentialNodeImpact.size() > 0);
-	throw std::runtime_error("empty priority queue");
+	throw std::runtime_error("empty priority queue");*/
 }
 
 uint32_t GreedyState::getImpact(Node node) {
