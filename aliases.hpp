@@ -18,4 +18,4 @@ struct FibonacciHash {
 };
 
 using FastSet = std::unordered_set<Node, FibonacciHash>;
-using FastMap = std::unordered_map<Node, uint32_t, FibonacciHash>;
+using FastMap = std::unordered_map<Node, size_t, FibonacciHash>;

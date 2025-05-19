@@ -46,7 +46,7 @@ Solution LocalSearch::run(std::unique_ptr<NeighborhoodStrategy> neighborhoodStra
 */
 bool LocalSearch::updateDelta(std::vector<Node>& removedNodesVector, std::vector<Node>& addedNodesVector, FastSet& removedNodes, FastSet& addedNodes) {
 	for (Node node : removedNodesVector) {
-		if (addedNodes.find(node) != addedNodes.end()) {
+		if (addedNodes.find(node) == addedNodes.end()) {
 			removedNodes.insert(node);
 		}
 		else {
@@ -54,7 +54,7 @@ bool LocalSearch::updateDelta(std::vector<Node>& removedNodesVector, std::vector
 		}
 	}
 	for (Node node : addedNodesVector) {
-		if (removedNodes.find(node) != removedNodes.end()) {
+		if (removedNodes.find(node) == removedNodes.end()) {
 			addedNodes.insert(node);
 		}
 		else {
@@ -75,6 +75,8 @@ void LocalSearch::transformSolution(FastSet& removedNodes, FastSet& addedNodes) 
 	for (Node node : addedNodes) {
 		bestSolution.insert(node);
 	}
+	removedNodes.clear();
+	addedNodes.clear();
 }
 
 // TODO
