@@ -16,7 +16,7 @@ public:
 	void deleteNodes(const std::vector<Node>&) override;
 	void deleteEdges(std::vector<EdgeIndex>&) override;
 
-	std::optional<Solution> branchAndReduce(GreedyState, std::unordered_set<Node>, std::unordered_set<Node>);
+	std::optional<Solution> branchAndReduce(GreedyState, FastSet, FastSet);
 	uint32_t calculateSolutionSizeLowerBound(GreedyState&);
 	void reduce(GreedyState&);
 	Node chooseNextNode(GreedyState&);

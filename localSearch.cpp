@@ -11,8 +11,8 @@ Solution LocalSearch::run(std::unique_ptr<NeighborhoodStrategy> neighborhoodStra
 	uint32_t loggingInterval = 10;
 	uint32_t noChangeCounter = 0;
 	uint32_t adaptThreshold = 1500000;
-	std::unordered_set<Node> removedNodes;
-	std::unordered_set<Node> addedNodes;
+	FastSet removedNodes;
+	FastSet addedNodes;
 	std::vector<Node> removedNodesVector;
 	std::vector<Node> addedNodesVector;
 
@@ -44,7 +44,7 @@ Solution LocalSearch::run(std::unique_ptr<NeighborhoodStrategy> neighborhoodStra
 * We have to always keep removedNodes and addedNodes up to date, while we only have to update the best solution when we find a better one
 * So this method makes it possible to keep track of the difference from the old best solution to the upcoming best solution
 */
-bool LocalSearch::updateDelta(std::vector<Node>& removedNodesVector, std::vector<Node>& addedNodesVector, std::unordered_set<Node>& removedNodes, std::unordered_set<Node>& addedNodes) {
+bool LocalSearch::updateDelta(std::vector<Node>& removedNodesVector, std::vector<Node>& addedNodesVector, FastSet& removedNodes, FastSet& addedNodes) {
 	for (Node node : removedNodesVector) {
 		if (addedNodes.find(node) != addedNodes.end()) {
 			removedNodes.insert(node);
@@ -68,7 +68,7 @@ bool LocalSearch::isAcceptable(Solution& solutionCandidate) {
 	return solutionCandidate.size() < bestSolution.size() && strategy->algorithmState->hypergraph.isSolved();
 }
 
-void LocalSearch::transformSolution(std::unordered_set<Node>& removedNodes, std::unordered_set<Node>& addedNodes) {
+void LocalSearch::transformSolution(FastSet& removedNodes, FastSet& addedNodes) {
 	for (Node node : removedNodes) {
 		bestSolution.erase(node);
 	}

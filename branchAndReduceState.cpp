@@ -18,12 +18,12 @@ Solution BranchAndReduceState::calculateSolution(bool applyKernelization) {
 	GreedyState state = GreedyState(hypergraph, optionsResult);
 	//solution = state.calculateSolution(applyKernelization);
 
-	branchAndReduce(state, std::unordered_set<Node>(), std::unordered_set<Node>());
+	branchAndReduce(state, FastSet(), FastSet());
 
 	return solution;
 }
 
-std::optional<Solution> BranchAndReduceState::branchAndReduce(GreedyState state, std::unordered_set<Node> include, std::unordered_set<Node> exclude) { // might be merged with calculateSolution()
+std::optional<Solution> BranchAndReduceState::branchAndReduce(GreedyState state, FastSet include, FastSet exclude) { // might be merged with calculateSolution()
 	uint32_t lowerBound = calculateSolutionSizeLowerBound(state);
 	Solution recursiveSolution = state.calculateSolution(false);
 	uint32_t upperBound = recursiveSolution.size();
@@ -61,8 +61,8 @@ std::optional<Solution> BranchAndReduceState::branchAndReduce(GreedyState state,
 	Node nextNode = chooseNextNode(newState);
 	newState.addToSolution(nextNode);
 	newState2.banFromSolution(nextNode);
-	std::unordered_set<Node> newInclude = include;
-	std::unordered_set<Node> newExclude = exclude;
+	FastSet newInclude = include;
+	FastSet newExclude = exclude;
 	newInclude.insert(nextNode);
 	newExclude.insert(nextNode);
 

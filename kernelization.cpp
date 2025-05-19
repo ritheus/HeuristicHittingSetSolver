@@ -80,13 +80,13 @@ namespace kernelization {
 	}
 
 	bool applyVertexDominationRule(AlgorithmState& state) {
-		std::unordered_set<Node> dominatedNodes = findDominatedNodes(state);
+		FastSet dominatedNodes = findDominatedNodes(state);
 		state.deleteNodes(std::vector<Node>(dominatedNodes.begin(), dominatedNodes.end()));
 		return !dominatedNodes.empty();
 	}
 
-	std::unordered_set<Node> findDominatedNodes(AlgorithmState& state) {
-		std::unordered_set<Node> dominatedNodes;
+	FastSet findDominatedNodes(AlgorithmState& state) {
+		FastSet dominatedNodes;
 		for (Node dominated : state.hypergraph.getNodes()) {
 			uint32_t dominatedSize = state.hypergraph.getIncidentEdgeIndizes(dominated).size();
 			for (Node dominating : state.hypergraph.getAdjacentNodes(dominated)) {

@@ -201,7 +201,7 @@ public:
     }
 
     void deleteNodes(const std::vector<Node>& nodesToRemove) {
-        std::unordered_set<Node> toRemove(nodesToRemove.begin(), nodesToRemove.end());
+        FastSet toRemove(nodesToRemove.begin(), nodesToRemove.end());
         n -= toRemove.size();
 
         std::vector<EdgeIndex> edgeIndizesToRemove;
@@ -245,8 +245,8 @@ public:
     }
 
 
-    std::unordered_set<Node> getAdjacentNodes(Node node) const {
-        std::unordered_set<Node> adjacentNodes;
+    FastSet getAdjacentNodes(Node node) const {
+        FastSet adjacentNodes;
         adjacentNodes.reserve(incidentEdgeIndizes[node].size() * maximumEdgeDegree);
 
 		for (EdgeIndex edgeIndex : incidentEdgeIndizes[node]) {

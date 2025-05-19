@@ -27,8 +27,8 @@ struct LocalSearch {
 
 	Solution run(std::unique_ptr<NeighborhoodStrategy>);
 	bool isAcceptable(Solution&);
-	bool updateDelta(std::vector<Node>&, std::vector<Node>&, std::unordered_set<Node>&, std::unordered_set<Node>&);
-	void transformSolution(std::unordered_set<Node>&, std::unordered_set<Node>&);
+	bool updateDelta(std::vector<Node>&, std::vector<Node>&, FastSet&, FastSet&);
+	void transformSolution(FastSet&, FastSet&);
 
 	// TODO
 	double solutionPotential;

@@ -6,8 +6,8 @@
 #include <vector>
 
 struct Solution {
-	std::unordered_set<Node> solutionSet;
-	std::unordered_map<Node, size_t> nodeToIndex;
+	FastSet solutionSet;
+	FastMap nodeToIndex;
 	std::vector<Node> solutionVector;
 
 	Solution() {}
@@ -48,7 +48,7 @@ struct Solution {
 		return solutionSet.find(node) != solutionSet.end();
 	}
 
-	std::unordered_set<Node>& getSolution() {
+	FastSet& getSolution() {
 		return solutionSet;
 	}
 
@@ -68,8 +68,8 @@ struct Solution {
 		return solutionSet != other.solutionSet;
 	}
 
-	std::unordered_set<Node> diff(const Solution& other) const {
-		std::unordered_set<Node> diffSet;
+	FastSet diff(const Solution& other) const {
+		FastSet diffSet;
 
 		for (const Node& node : solutionSet) {
 			if (other.solutionSet.find(node) == other.solutionSet.end()) {

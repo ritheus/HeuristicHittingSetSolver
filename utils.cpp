@@ -23,7 +23,7 @@ std::string toString(const std::vector<Node>& vec) {
     return ss.str();
 }
 
-std::string toString(const std::unordered_set<Node>& set) {
+std::string toString(const FastSet& set) {
     std::stringstream ss;
     for (const Node node : set) {
         ss << node << '\n';
@@ -94,7 +94,7 @@ std::tuple<NumNodes, NumEdges, std::vector<std::vector<Node>>> parseStdIn() {
     return parseInputStream(std::cin);
 }
 
-void writeToStdOut(const std::unordered_set<Node>& solutionSet) {
+void writeToStdOut(const FastSet& solutionSet) {
     std::string buffer;
     buffer.reserve(solutionSet.size() * 6 + 10); // heuristic: <=6 chars per node (inkl. '\n')
 

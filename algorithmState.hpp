@@ -9,7 +9,7 @@
 struct AlgorithmState {
 	Hypergraph hypergraph;
 	Solution solution;
-	std::unordered_set<Node> bannedNodes;
+	FastSet bannedNodes;
 	std::vector<Node> unbannedNodes;
 	cxxopts::ParseResult optionsResult;
 	std::unordered_map<Node, uint32_t> nodeAges; // higher is newer
