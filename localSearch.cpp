@@ -65,7 +65,7 @@ bool LocalSearch::updateDelta(std::vector<Node>& removedNodesVector, std::vector
 }
 
 bool LocalSearch::isAcceptable(Solution& solutionCandidate) {
-	return solutionCandidate.size() <= bestSolution.size() && strategy->algorithmState->hypergraph.isSolved();
+	return solutionCandidate.size() < bestSolution.size() && strategy->algorithmState->hypergraph.isSolved();
 }
 
 void LocalSearch::transformSolution(std::unordered_set<Node>& removedNodes, std::unordered_set<Node>& addedNodes) {
