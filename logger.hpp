@@ -4,7 +4,7 @@
 
 //#define LOGGING
 //#define LOGGINGBNR
-//#define LOG_LOCALSEARCH
+#define LOG_LOCALSEARCH
 
 
 #ifdef LOGGING

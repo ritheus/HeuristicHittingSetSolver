@@ -8,7 +8,7 @@
 #include <random>
 
 Solution LocalSearch::run(std::unique_ptr<NeighborhoodStrategy> neighborhoodStrategy) {
-	uint32_t loggingInterval = 10;
+	uint32_t loggingInterval = 100;
 	uint32_t noChangeCounter = 0;
 	uint32_t adaptThreshold = 1500000;
 	FastSet removedNodes;

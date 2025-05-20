@@ -27,7 +27,7 @@ std::vector<Node> LPLocalSearch::removeNodes(uint32_t numNodesToRemove = 2) {
 	for (uint32_t i = 0; i < numNodesToRemove; i++) {
 		if (nodes.size() > nodesToRemove.size()) {
 			uint32_t nodeToRemove = nodes[samplingDistribution(gen)];
-			if (std::find(nodesToRemove.begin(), nodesToRemove.end(), nodeToRemove) == nodesToRemove.end()) {
+			if (std::find(nodesToRemove.begin(), nodesToRemove.end(), nodeToRemove) == nodesToRemove.end() && algorithmState->getSolution().contains(nodeToRemove)) {
 				nodesToRemove.push_back(nodeToRemove);
 			}
 		}
@@ -52,4 +52,5 @@ std::vector<Node> LPLocalSearch::repairPartialSolution() {
 
 void LPLocalSearch::initializeAlgorithmState(std::unique_ptr<AlgorithmState> state) {
 	algorithmState = std::move(state);
+	greedyState.setSolution(algorithmState->getSolution());
 }

@@ -37,6 +37,6 @@ struct ShrinkAndOscillateNeighborhoodStrategy : NeighborhoodStrategy {
 		uint32_t modulo_i = (i + period / 2) % period;
 		double x = static_cast<double>(modulo_i) / static_cast<double>(period);
 		double tri = 1.0 - std::abs(2.0 * (x - std::floor(x + 0.5)));
-		double numNodesToDelete = tri * (maxNumNodesToDelete - minNumNodesToDelete) + minNumNodesToDelete;
+		numNodesToDelete = tri * (maxNumNodesToDelete - minNumNodesToDelete) + minNumNodesToDelete;
 	}
 };
