@@ -22,7 +22,7 @@ public:
 	bool addToSolution(Node) override;
 	bool removeFromSolution(Node) override;
 	void banFromSolution(Node) override;
-	void setSolution(Solution solution);
+	void setSolution(Solution& solution) override;
 
 	std::pair<uint32_t, Node> getHighestImpactNode();
 	uint32_t getImpact(Node);

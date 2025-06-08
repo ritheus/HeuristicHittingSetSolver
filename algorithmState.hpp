@@ -25,8 +25,9 @@ struct AlgorithmState {
 		return solution;
 	}
 
-	virtual void setSolution(Solution solution) {
-		this->solution = solution;
+	virtual void setSolution(Solution& newSolution) {
+		this->solution = newSolution;
+		throw std::runtime_error("setSolution not implemented");
 	}
 
 	bool isSolved() {

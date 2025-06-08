@@ -74,7 +74,7 @@ bool AdaptiveGreedyState::addToSolution(Node node) {
 	return true;
 }
 
-void AdaptiveGreedyState::setSolution(Solution solution) {
+void AdaptiveGreedyState::setSolution(Solution& solution) {
     for (Node node : solution.getSolution()) {
         addToSolution(node);
 	}

@@ -67,9 +67,25 @@ void GreedyState::deleteEdges(std::vector<EdgeIndex>& edgeIndizesToRemove) {
 	hypergraph.deleteEdges(edgeIndizesToRemove);
 }
 
-void GreedyState::setSolution(Solution newSolution) {
-	solution = {};
+void GreedyState::setSolution(Solution& newSolution) {
+	std::vector<Node> nodesToRemove;
+	std::vector<Node> nodesToAdd;
+	for (Node node : solution.getSolution()) {
+		if (!newSolution.contains(node))
+		{
+			nodesToRemove.push_back(node);
+		}
+	}
+	for (Node node : nodesToRemove) {
+		removeFromSolution(node);
+	}
 	for (Node node : newSolution.getSolution()) {
+		if (!solution.contains(node))
+		{
+			nodesToAdd.push_back(node);
+		}
+	}
+	for (Node node : nodesToAdd) {
 		addToSolution(node);
 	}
 	if (solution.size() != newSolution.size()) {

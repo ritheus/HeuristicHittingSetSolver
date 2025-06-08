@@ -43,3 +43,19 @@ std::vector<Node> RandomLocalSearch::repairPartialSolution() {
 void RandomLocalSearch::initializeAlgorithmState(std::unique_ptr<AlgorithmState> state) {
 	algorithmState = std::move(state);
 }
+
+void RandomLocalSearch::setSolution(Solution& solution) {
+	algorithmState->setSolution(solution);
+}
+
+Solution& RandomLocalSearch::getSolution() {
+	return algorithmState->getSolution();
+}
+
+bool RandomLocalSearch::isSolved() {
+	return algorithmState->isSolved();
+}
+
+bool RandomLocalSearch::isSolvedBy(Solution& solution) {
+	return algorithmState->hypergraph.isSolvedBy(solution);
+}

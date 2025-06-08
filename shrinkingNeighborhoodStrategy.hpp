@@ -13,8 +13,9 @@ struct ShrinkingNeighborhoodStrategy : NeighborhoodStrategy {
 		i++;
 		if (i % stepInterval == 0) {
 			if (numNodesToDelete > minNumNodesToDelete) {
-				numNodesToDelete = std::max(numNodesToDelete /= 2, minNumNodesToDelete);
+				numNodesToDelete = std::max(numNodesToDelete / 2, minNumNodesToDelete);
 			}
+			revertSolutionThreshold = std::min(revertSolutionThreshold * 2, std::numeric_limits<uint32_t>::max() / 4);
 		}
 	}
 };

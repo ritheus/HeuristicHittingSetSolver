@@ -22,7 +22,7 @@ public:
 
     Solution calculateSolution(bool=true);
     bool addToSolution(Node) override; // O(deg_node * deg_edge * log n)
-    virtual void setSolution(Solution) override;
+    virtual void setSolution(Solution&) override;
     bool removeFromSolution(Node);
     bool shrinkSolutionIfApplicable(uint32_t);
     void addToEdgesOnlyHitByNode(Node, EdgeIndex);

@@ -6,34 +6,60 @@
 #include <map>
 #include <cmath>
 #include <random>
+#include <chrono>
 
-Solution LocalSearch::run(std::unique_ptr<NeighborhoodStrategy> neighborhoodStrategy) {
+using Clock = std::chrono::steady_clock;
+using TimePoint = std::chrono::time_point<Clock>;
+
+Solution LocalSearch::run(bool revertSolutionFlag, uint32_t revertSolutionThreshold) {
 	uint32_t loggingInterval = 100;
 	uint32_t noChangeCounter = 0;
-	uint32_t adaptThreshold = 1500000;
-	FastSet removedNodes;
-	FastSet addedNodes;
+	uint32_t revertSolutionCounter = 0;
+	uint32_t adaptThreshold = 150000000;
+	neighborhoodStrategy->revertSolutionThreshold = revertSolutionThreshold;
 	std::vector<Node> removedNodesVector;
 	std::vector<Node> addedNodesVector;
 
-	strategy->initializeAlgorithmState(std::move(state));
-	while (!neighborhoodStrategy->isDone()) {
+	const int maxSeconds = 3600;
+	TimePoint start = Clock::now();
+
+	//while (!neighborhoodStrategy->isDone()) {
+	while (true) {
 		removedNodesVector = strategy->removeNodes(neighborhoodStrategy->numNodesToDelete);
 		addedNodesVector = strategy->repairPartialSolution();
 		Solution& solutionCandidate = strategy->algorithmState->getSolution();
 		updateDelta(removedNodesVector, addedNodesVector, removedNodes, addedNodes);
 		if (isAcceptable(solutionCandidate)) {
 			transformSolution(removedNodes, addedNodes);
-			//bestSolution = solutionCandidate;
+			revertSolutionCounter = 0;
+		}
+		else {
+			if (revertSolutionFlag) {
+				revertSolutionCounter++;
+				if (revertSolutionCounter > neighborhoodStrategy->revertSolutionThreshold) {
+					revertSolution(removedNodes, addedNodes);
+					revertSolutionCounter = 0;
+				}
+			}
 		}
 		log_localsearch(neighborhoodStrategy->i, loggingInterval, bestSolution);
 		neighborhoodStrategy->update();
 		if (neighborhoodStrategy->i == adaptThreshold) {
 			neighborhoodStrategy->adapt();
 		}
+
+		TimePoint now = Clock::now();
+		double elapsedSeconds = std::chrono::duration_cast<std::chrono::seconds>(now - start).count();
+		if (neighborhoodStrategy->isDone() || elapsedSeconds >= maxSeconds) {
+			if (!strategy->isSolvedBy(bestSolution)) {
+				throw std::runtime_error("Solution not found");
+			}
+
+			return std::move(bestSolution);
+		}
 	}
 
-	if (!strategy->algorithmState->hypergraph.isSolvedBy(bestSolution)) {
+	if (!strategy->isSolvedBy(bestSolution)) {
 		throw std::runtime_error("Solution not found");
 	}
 
@@ -65,7 +91,15 @@ bool LocalSearch::updateDelta(std::vector<Node>& removedNodesVector, std::vector
 }
 
 bool LocalSearch::isAcceptable(Solution& solutionCandidate) {
-	return solutionCandidate.size() < bestSolution.size() && strategy->algorithmState->hypergraph.isSolved();
+	if (solutionCandidate.size() < bestSolution.size()) {
+		if (strategy->isSolved()) {
+			return true;
+		}
+		else {
+			throw std::runtime_error("hypergraph is unsolved");
+		}
+	}
+	return false;
 }
 
 void LocalSearch::transformSolution(FastSet& removedNodes, FastSet& addedNodes) {
@@ -77,6 +111,46 @@ void LocalSearch::transformSolution(FastSet& removedNodes, FastSet& addedNodes) 
 	}
 	removedNodes.clear();
 	addedNodes.clear();
+}
+
+void LocalSearch::revertSolution(FastSet& removedNodes, FastSet& addedNodes) {
+	strategy->revertSolution(removedNodes, addedNodes);
+	for (Node node : removedNodes) {
+		strategy->algorithmState->addToSolution(node);
+	}
+	for (Node node : addedNodes) {
+		strategy->algorithmState->removeFromSolution(node);
+	}
+	removedNodes.clear();
+	addedNodes.clear();
+}
+
+void LocalSearch::replaceStrategy(std::unique_ptr<LocalSearchStrategy> newStrategy) {
+	this->state = std::move(this->strategy->algorithmState);
+	this->strategy = std::move(newStrategy);
+}
+
+void LocalSearch::setSolution(Solution& newSolution, Solution& bestSolution) {
+	this->bestSolution = bestSolution;
+	this->strategy->setSolution(newSolution);
+}
+
+void LocalSearch::resetDelta() {
+	this->removedNodes.clear();
+	this->addedNodes.clear();
+}
+
+void LocalSearch::copyDelta(LocalSearch& source) {
+	for (Node node : source.removedNodes) {
+		if (this->addedNodes.find(node) == this->addedNodes.end()) {
+			this->removedNodes.insert(node);
+		}
+	}
+	for (Node node : source.addedNodes) {
+		if (this->removedNodes.find(node) == this->removedNodes.end()) {
+			this->addedNodes.insert(node);
+		}
+	}
 }
 
 // TODO

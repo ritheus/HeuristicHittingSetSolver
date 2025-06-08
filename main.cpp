@@ -20,6 +20,7 @@
 #include "shrinkAndOscillateNeighborhoodStrategy.hpp"
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 
 //#define LOGGING
 //#define PROFILER
@@ -27,12 +28,12 @@
 int main(int argc, char* argv[]) {
 #if _DEBUG
     //"--kernelization_unitEdgeRule", "--kernelization_vertexDominationRule", "--kernelization_edgeDominationRule"
-    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "exact_001.hgr", "--localSearch_LP", "--localSearch_numIterations", "50000", "--neighborhood_minDeletions", "5", "--localSearch_numDeletions", "5", "--neighborhood_flat", "--neighborhood_period", "800", "--neighborhood_stepInterval", "800" };
+    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "exact_001.hgr", "--localSearch_random", "--localSearch_numIterations", "100000", "--neighborhood_minDeletions", "1", "--localSearch_numDeletions", "1", "--neighborhood_flat", "--neighborhood_period", "800", "--neighborhood_stepInterval", "800" };
     argc = sizeof(fakeArgv) / sizeof(fakeArgv[0]);
     argv = const_cast<char**>(fakeArgv);
 #endif
 #ifdef PROFILER
-    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "heuristic_100.hgr", "--localSearch_random", "--localSearch_numIterations", "10000", "--neighborhood_minDeletions", "50", "--localSearch_numDeletions", "1500", "--kernelization_unitEdgeRule", "--neighborhood_shrinking_oscillating", "--neighborhood_period", "800", "--neighborhood_stepInterval", "800"};
+    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "heuristic_015.hgr", "--localSearch_random", "--localSearch_numIterations", "1000", "--neighborhood_minDeletions", "50", "--localSearch_numDeletions", "10000", "--kernelization_unitEdgeRule", "--neighborhood_flat", "--neighborhood_period", "800", "--neighborhood_stepInterval", "800"};
     argc = sizeof(fakeArgv) / sizeof(fakeArgv[0]);
     argv = const_cast<char**>(fakeArgv);
 #endif
@@ -45,8 +46,8 @@ int main(int argc, char* argv[]) {
     options.add_options()
         ("a,algorithm", "Algorithm to use (e.g. Greedy, AdaptiveGreedy, BranchAndReduce, VC)", cxxopts::value<std::string>())
         ("vc_numIterations", "Randomly round the fractional solution of the VC algorithm to the specified number of iterations", cxxopts::value<uint32_t>()->default_value("5"))
-        ("localSearch_numIterations", "How many local search iterations to run", cxxopts::value<uint32_t>()->default_value("5"))
-        ("localSearch_numDeletions", "How many nodes to delete per local search iteration", cxxopts::value<uint32_t>()->default_value("5"))
+        ("localSearch_numIterations", "How many local search iterations to run", cxxopts::value<uint32_t>()->default_value("0"))
+        ("localSearch_numDeletions", "How many nodes to delete per local search iteration", cxxopts::value<uint32_t>()->default_value("0"))
         ("localSearch_tabuLength", "How long the tabu list should be", cxxopts::value<uint32_t>()->default_value("10"))
         ("kernelization_unitEdgeRule", "Apply the Unit Edge Rule kernelization method")
         ("kernelization_vertexDominationRule", "Apply the Vertex Domination Rule kernelization method")
@@ -65,12 +66,15 @@ int main(int argc, char* argv[]) {
         ("neighborhood_minDeletions", "How many nodes to delete per local search iteration at least", cxxopts::value<uint32_t>()->default_value("5"))
         ("neighborhood_stepInterval", "After how many iterations to reduce the number of deletions", cxxopts::value<uint32_t>()->default_value("1000"))
         ("neighborhood_period", "After how many iterations to cycle the number of deletions", cxxopts::value<uint32_t>()->default_value("1000"))
+        ("neighborhood_intensifying", "Revert to best solution after a fixed number of worse current solutions")
+        ("neighborhood_numIntensify", "After how many bad iterations to revert back to best solution", cxxopts::value<uint32_t>()->default_value("1"))
+        ("neighborhood_exploring", "Do not revert to best solution after a fixed number of worse current solutions")
         ("i,input", "Use the specified input file instead of reading from stdin", cxxopts::value<std::string>())
         ("h,help", "Show this help message and exit");
 
     const cxxopts::ParseResult& optionsResult = options.parse(argc, argv);
 
-    if (optionsResult.count("help") || !optionsResult.count("algorithm")) {
+    if (optionsResult.count("help")) {
         std::cout << options.help() << std::endl;
         std::cout << "\nExamples:\n";
         std::cout << "  ./hittingset -a Greedy --kernelization_unitEdgeRule --kernelization_vertexDominationRule\n";
@@ -116,7 +120,10 @@ int main(int argc, char* argv[]) {
         std::transform(s.begin(), s.end(), s.begin(), ::tolower);
         return s;
         };
-    std::string algorithm = toLower(optionsResult["algorithm"].as<std::string>());
+    std::string algorithm = "greedy";
+    if (optionsResult.count("algorithm")) {
+        algorithm = toLower(optionsResult["algorithm"].as<std::string>());
+    }
 
     Solution solution = Solution(n);
     std::unique_ptr<AlgorithmState> state;
@@ -139,28 +146,35 @@ int main(int argc, char* argv[]) {
 
     uint32_t numIterations = optionsResult["localSearch_numIterations"].as<uint32_t>();
     uint32_t numDeletions = optionsResult["localSearch_numDeletions"].as<uint32_t>();
+    if (numDeletions == 0) {
+        numDeletions = std::max<size_t>(solution.size() / 30, 5);
+    }
+    bool intensify = optionsResult.count("neighborhood_intensifying");
+    uint32_t intensifyThreshold = optionsResult["neighborhood_numIntensify"].as<uint32_t>();
     uint32_t tabuLength = optionsResult["localSearch_tabuLength"].as<uint32_t>();
+
     if (optionsResult.count("localSearch_tabu") || optionsResult.count("localSearch_random") || optionsResult.count("localSearch_randomLP") || optionsResult.count("localSearch_LP") || optionsResult.count("localSearch_randomTabu")) {
         std::unique_ptr<LocalSearchStrategy> localSearchStrategy;
+        std::unique_ptr<LocalSearchStrategy> localSearchStrategy2;
+        GreedyState greedyState(state->hypergraph, {});
         if (optionsResult.count("localSearch_tabu")) {
             state = std::make_unique<AdaptiveGreedyState>(state->hypergraph, optionsResult);
             state->setSolution(solution);
 			localSearchStrategy = std::make_unique<AdaptiveGreedyTabuLocalSearch>(state->hypergraph, state->getSolution(), tabuLength);
 		}
-		else if (optionsResult.count("localSearch_random")) {
-            state = std::make_unique<GreedyState>(state->hypergraph, optionsResult);
-			state->setSolution(solution);
-			localSearchStrategy = std::make_unique<RandomLocalSearch>();
-		}
         else if (optionsResult.count("localSearch_LP")) {
             auto* vcState = dynamic_cast<VCState*>(state.get());
-            GreedyState greedyState(state->hypergraph, {});
             if (vcState == nullptr) {
                 localSearchStrategy = std::make_unique<LPLocalSearch>(greedyState);
             }
             else {
                 localSearchStrategy = std::make_unique<LPLocalSearch>(greedyState, vcState->getOrderedFractionalSolution());
             }
+        }
+        else if (optionsResult.count("localSearch_random")) {
+            state = std::make_unique<GreedyState>(state->hypergraph, optionsResult);
+            state->setSolution(solution);
+            localSearchStrategy = std::make_unique<RandomLocalSearch>();
         }
         else if (optionsResult.count("localSearch_randomLP")) {
             auto* vcState = dynamic_cast<VCState*>(state.get());
@@ -174,8 +188,8 @@ int main(int argc, char* argv[]) {
         else if (optionsResult.count("localSearch_randomTabu")) {
             localSearchStrategy = std::make_unique<RandomTabuLocalSearch>(state->hypergraph, solution, tabuLength);
         }
-        LocalSearch localSearch(std::move(state), std::move(localSearchStrategy), optionsResult);
-
+        
+        uint32_t revertSolutionThreshold = optionsResult["neighborhood_numIntensify"].as<uint32_t>();
         std::unique_ptr<NeighborhoodStrategy> neighborhoodStrategy;
         if (optionsResult.count("neighborhood_flat")) {
             neighborhoodStrategy = std::make_unique<FlatNeighborhoodStrategy>(numIterations, numDeletions);
@@ -196,8 +210,35 @@ int main(int argc, char* argv[]) {
             uint32_t stepInterval = optionsResult["neighborhood_stepInterval"].as<uint32_t>();
             neighborhoodStrategy = std::make_unique<ShrinkAndOscillateNeighborhoodStrategy>(numIterations, minNumNodesToDelete, numDeletions, stepInterval, period);
         }
+        LocalSearch localSearch(std::move(state), std::move(localSearchStrategy), std::move(neighborhoodStrategy), optionsResult);
+        localSearch.strategy->initializeAlgorithmState(std::move(localSearch.state));
+        solution = localSearch.run(intensify, revertSolutionThreshold);
 
-        solution = localSearch.run(std::move(neighborhoodStrategy));
+        /*
+        localSearchStrategy2 = std::make_unique<RandomLocalSearch>();
+        std::unique_ptr<NeighborhoodStrategy> neighborhoodStrategy2 = std::make_unique<FlatNeighborhoodStrategy>(numIterations, numDeletions);
+        LocalSearch localSearch2(std::move(std::make_unique<GreedyState>(greedyState)), std::move(localSearchStrategy2), std::move(neighborhoodStrategy2), optionsResult);
+        localSearch2.strategy->initializeAlgorithmState(std::move(localSearch2.state));
+        localSearch2.setSolution(localSearch.strategy->algorithmState->getSolution(), solution);
+        localSearch2.run(intensify, revertSolutionThreshold);
+        /*
+        uint32_t nextNumIterations = 0;
+        while (nextNumIterations < numIterations) {
+            localSearch.neighborhoodStrategy->setIndex(nextNumIterations);
+            nextNumIterations += 100;
+            localSearch.neighborhoodStrategy->setNumIterations(nextNumIterations);
+            localSearch.resetDelta();
+            localSearch.copyDelta(localSearch2);
+            localSearch.setSolution(localSearch2.strategy->getSolution(), solution);
+            solution = localSearch.run(intensify, intensifyThreshold);
+            localSearch2.neighborhoodStrategy->setIndex(nextNumIterations);
+            nextNumIterations += 200;
+            localSearch2.neighborhoodStrategy->setNumIterations(nextNumIterations);
+            localSearch2.resetDelta();
+            localSearch2.copyDelta(localSearch);
+            localSearch2.setSolution(localSearch.strategy->getSolution(), solution);
+            solution = localSearch2.run(intensify, intensifyThreshold);
+		}*/
 	}
     
 

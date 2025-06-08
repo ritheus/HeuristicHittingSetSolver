@@ -13,6 +13,9 @@ private:
     std::vector<std::vector<EdgeIndex>> incidentEdgeIndizes;
     std::vector<Node> activeNodes;
     uint32_t maximumEdgeDegree = 0;
+    uint32_t averageEdgeDegree = 0;
+    uint32_t averageVertexDegree = 0;
+    uint32_t sumEdgeDegree = 0;
     uint32_t maximumVertexDegree = 0;
     std::vector<uint32_t> edgeHitCounts;
     NumEdges numUnhitEdges;
@@ -32,6 +35,7 @@ public:
             for (Node node : edges[edgeIndex]) {
                 incidentEdgeIndizes[node].push_back(edgeIndex);
             }
+            sumEdgeDegree += edges[edgeIndex].size();
             if (edges[edgeIndex].size() > maximumEdgeDegree) {
                 maximumEdgeDegree = edges[edgeIndex].size();
             }
@@ -41,6 +45,8 @@ public:
                 maximumVertexDegree = incidentEdgeIndizes[node].size();
             }
         }
+        averageEdgeDegree = sumEdgeDegree / m;
+        averageVertexDegree = sumEdgeDegree / n;
     }
 
     void reset() {
@@ -280,6 +286,14 @@ public:
 
     uint32_t getMaximumEdgeDegree() const {
         return maximumEdgeDegree;
+    }
+
+    uint32_t getAverageEdgeDegree() const {
+        return averageEdgeDegree;
+    }
+
+    uint32_t getAverageVertexDegree() const {
+        return averageVertexDegree;
     }
 
     uint32_t getM() const {
