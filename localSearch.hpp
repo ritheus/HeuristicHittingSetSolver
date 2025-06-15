@@ -40,13 +40,5 @@ struct LocalSearch {
 	void setSolution(Solution&, Solution&);
 	void resetDelta();
 	void copyDelta(LocalSearch&);
-
-	// TODO
-	double solutionPotential;
-	double currentSolutionPotential;
-	void initializePotential();
-	double potential(Node);
-	void updatePotential(const std::vector<Node>&, const std::vector<Node>&);
-	double harmonicApproximation(uint32_t);
 	void log_localsearch(uint32_t, uint32_t, Solution&);
 };

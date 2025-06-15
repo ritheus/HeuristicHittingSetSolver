@@ -28,12 +28,12 @@
 int main(int argc, char* argv[]) {
 #if _DEBUG
     //"--kernelization_unitEdgeRule", "--kernelization_vertexDominationRule", "--kernelization_edgeDominationRule"
-    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "exact_001.hgr", "--localSearch_random", "--localSearch_numIterations", "100000", "--neighborhood_minDeletions", "1", "--localSearch_numDeletions", "1", "--neighborhood_flat", "--neighborhood_period", "800", "--neighborhood_stepInterval", "800" };
+    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "BigExample.hgr", "--localSearch_random", "--localSearch_numIterations", "100000", "1", "--localSearch_numDeletions", "5" };
     argc = sizeof(fakeArgv) / sizeof(fakeArgv[0]);
     argv = const_cast<char**>(fakeArgv);
 #endif
 #ifdef PROFILER
-    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "heuristic_015.hgr", "--localSearch_random", "--localSearch_numIterations", "1000", "--neighborhood_minDeletions", "50", "--localSearch_numDeletions", "10000", "--kernelization_unitEdgeRule", "--neighborhood_flat", "--neighborhood_period", "800", "--neighborhood_stepInterval", "800"};
+    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "BigExample.hgr", "--localSearch_random", "--localSearch_numIterations", "1000", "--neighborhood_minDeletions", "50", "--localSearch_numDeletions", "10000", "--kernelization_unitEdgeRule", "--neighborhood_flat", "--neighborhood_period", "800", "--neighborhood_stepInterval", "800"};
     argc = sizeof(fakeArgv) / sizeof(fakeArgv[0]);
     argv = const_cast<char**>(fakeArgv);
 #endif
@@ -77,8 +77,8 @@ int main(int argc, char* argv[]) {
     if (optionsResult.count("help")) {
         std::cout << options.help() << std::endl;
         std::cout << "\nExamples:\n";
-        std::cout << "  ./hittingset -a Greedy --kernelization_unitEdgeRule --kernelization_vertexDominationRule\n";
-        std::cout << "  ./hittingset --algorithm=AdaptiveGreedy --kernelization_allRules\n";
+        std::cout << "  ./hittingset -a greedy -i BigExample.hgr --kernelization_unitEdgeRule --localSearch_random --localSearch_numIterations 100000 --neighborhood_minDeletions 5 --localSearch_numDeletions 100 --neighborhood_shrinking --neighborhood_stepInterval 800\n";
+        std::cout << "  ./hittingset -a VC -i SmallExample.hgr --kernelization_allRules --localSearch_LP --localSearch_numIterations 100000 --neighborhood_minDeletions 5 --localSearch_numDeletions 100 --neighborhood_shrinking --neighborhood_stepInterval 800\n";
         return 0;
     }
 
@@ -140,7 +140,7 @@ int main(int argc, char* argv[]) {
         state = std::make_unique<BranchAndReduceState>(n, m, std::move(setSystem), optionsResult);
     }
     else {
-        throw std::runtime_error("Es wurde kein Algorithmus ausgewählt.");
+        throw std::runtime_error("No algorithm was chosen.");
     }
     solution = state->calculateSolution();
 
@@ -213,32 +213,6 @@ int main(int argc, char* argv[]) {
         LocalSearch localSearch(std::move(state), std::move(localSearchStrategy), std::move(neighborhoodStrategy), optionsResult);
         localSearch.strategy->initializeAlgorithmState(std::move(localSearch.state));
         solution = localSearch.run(intensify, revertSolutionThreshold);
-
-        /*
-        localSearchStrategy2 = std::make_unique<RandomLocalSearch>();
-        std::unique_ptr<NeighborhoodStrategy> neighborhoodStrategy2 = std::make_unique<FlatNeighborhoodStrategy>(numIterations, numDeletions);
-        LocalSearch localSearch2(std::move(std::make_unique<GreedyState>(greedyState)), std::move(localSearchStrategy2), std::move(neighborhoodStrategy2), optionsResult);
-        localSearch2.strategy->initializeAlgorithmState(std::move(localSearch2.state));
-        localSearch2.setSolution(localSearch.strategy->algorithmState->getSolution(), solution);
-        localSearch2.run(intensify, revertSolutionThreshold);
-        /*
-        uint32_t nextNumIterations = 0;
-        while (nextNumIterations < numIterations) {
-            localSearch.neighborhoodStrategy->setIndex(nextNumIterations);
-            nextNumIterations += 100;
-            localSearch.neighborhoodStrategy->setNumIterations(nextNumIterations);
-            localSearch.resetDelta();
-            localSearch.copyDelta(localSearch2);
-            localSearch.setSolution(localSearch2.strategy->getSolution(), solution);
-            solution = localSearch.run(intensify, intensifyThreshold);
-            localSearch2.neighborhoodStrategy->setIndex(nextNumIterations);
-            nextNumIterations += 200;
-            localSearch2.neighborhoodStrategy->setNumIterations(nextNumIterations);
-            localSearch2.resetDelta();
-            localSearch2.copyDelta(localSearch);
-            localSearch2.setSolution(localSearch.strategy->getSolution(), solution);
-            solution = localSearch2.run(intensify, intensifyThreshold);
-		}*/
 	}
     
 

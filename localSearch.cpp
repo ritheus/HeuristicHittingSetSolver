@@ -23,7 +23,6 @@ Solution LocalSearch::run(bool revertSolutionFlag, uint32_t revertSolutionThresh
 	const int maxSeconds = 3600;
 	TimePoint start = Clock::now();
 
-	//while (!neighborhoodStrategy->isDone()) {
 	while (true) {
 		removedNodesVector = strategy->removeNodes(neighborhoodStrategy->numNodesToDelete);
 		addedNodesVector = strategy->repairPartialSolution();
@@ -57,10 +56,6 @@ Solution LocalSearch::run(bool revertSolutionFlag, uint32_t revertSolutionThresh
 
 			return std::move(bestSolution);
 		}
-	}
-
-	if (!strategy->isSolvedBy(bestSolution)) {
-		throw std::runtime_error("Solution not found");
 	}
 
 	return std::move(bestSolution);
@@ -151,32 +146,6 @@ void LocalSearch::copyDelta(LocalSearch& source) {
 			this->addedNodes.insert(node);
 		}
 	}
-}
-
-// TODO
-
-void LocalSearch::initializePotential() {
-	for (Node node : bestSolution.solutionSet) {
-		solutionPotential += potential(node);
-	}
-}
-
-void LocalSearch::updatePotential(const std::vector<Node>& removedNodes, const std::vector<Node>& newNodes) {
-	for (Node node : removedNodes) {
-		currentSolutionPotential -= potential(node);
-	}
-	for (Node node : newNodes) {
-		currentSolutionPotential += potential(node);
-	}
-}
-
-double LocalSearch::potential(Node node) {
-	return harmonicApproximation(strategy->algorithmState->hypergraph.getIncidentEdgeIndizes(node).size()); // weight of each node is 1, so that gets ommitted
-}
-
-double LocalSearch::harmonicApproximation(uint32_t k) {
-	const double gamma = 0.57721566490153286060;
-	return std::log(k) + gamma + 1.0 / (2 * k) - 1.0 / (12.0 * k * k);
 }
 
 void LocalSearch::log_localsearch(uint32_t i, uint32_t loggingInterval, Solution& bestSolution) {
