@@ -8,7 +8,7 @@ It is highly configurable via command-line parameters and intended for research,
 
 ## Features
 
-- Multiple algorithms: Greedy, Adaptive Greedy, VC, (a very bad) Branch-and-Reduce
+- Multiple algorithms: Greedy, Adaptive Greedy, VC, Branch-and-Reduce
 - Advanced local search options
 - Kernelization rules (reduction rules) for problem simplification
 - Configurable neighborhood strategies for local search
@@ -90,26 +90,16 @@ The program accepts a wide range of parameters to control its behavior.
 
 ### Local Search Options
 
-| Option                        | Description                                 | Default |
-|-------------------------------|---------------------------------------------|---------|
-| `--localSearch_numIterations` | Number of local search iterations           | `0`     |
-| `--localSearch_numDeletions`  | Number of nodes deleted per iteration       | `0`     |
-| `--localSearch_tabuLength`    | Length of the tabu list                     | `10`    |
-| `--localSearch_tabu`          | Enable adaptive greedy tabu search          |         |
-| `--localSearch_random`        | Enable random local search                  |         |
-| `--localSearch_randomTabu`    | Random local search with tabu list          |         |
-| `--localSearch_LP`            | LP-based local search                       |         |
-| `--localSearch_randomLP`      | LP-based local search with random repair    |         |
-
-### Kernelization (Reduction) Rules
-
-| Option                                 | Description                       |
-|----------------------------------------|-----------------------------------|
-| `--kernelization_unitEdgeRule`         | Apply Unit-Edge rule              |
-| `--kernelization_vertexDominationRule` | Apply Vertex-Domination rule      |
-| `--kernelization_edgeDominationRule`   | Apply Edge-Domination rule        |
-| `--kernelization_criticalCoreRule`     | Apply Critical-Core rule          |
-| `--kernelization_allRules`             | Apply all kernelization rules     |
+| Option                        | Description                                 | Default  |
+|-------------------------------|---------------------------------------------|----------|
+| `--localSearch_numIterations` | Number of local search iterations           | `1000000`|
+| `--localSearch_numDeletions`  | Number of nodes deleted per iteration       | `5`      |
+| `--localSearch_tabuLength`    | Length of the tabu list                     | `25`     |
+| `--localSearch_tabu`          | Enable adaptive greedy tabu search          |          |
+| `--localSearch_random`        | Enable random local search                  |          |
+| `--localSearch_randomTabu`    | Random local search with tabu list          |          |
+| `--localSearch_LP`            | LP-based local search                       |          |
+| `--localSearch_randomLP`      | LP-based local search with random repair    |          |
 
 ### Neighborhood Strategies
 
@@ -120,11 +110,20 @@ The program accepts a wide range of parameters to control its behavior.
 | `--neighborhood_oscillating`           | Use oscillating neighborhood                               |         |
 | `--neighborhood_shrinking_oscillating` | Use shrinking first, then oscillating neighborhood         |         |
 | `--neighborhood_minDeletions`          | Minimum deletions per iteration                            | `5`     |
-| `--neighborhood_stepInterval`          | Interval (in iterations) for deletion count reduction      | `1000`  |
-| `--neighborhood_period`                | Cycle length for oscillating behavior                      | `1000`  |
+| `--neighborhood_stepInterval`          | Interval (in iterations) for deletion count reduction      | `800`   |
+| `--neighborhood_period`                | Cycle length for oscillating behavior                      | `800`   |
 | `--neighborhood_intensifying`          | Return to best solution after several worsening iterations |         |
-| `--neighborhood_numIntensify`          | Number of worsening iterations before revert               | `1`     |
+| `--neighborhood_numIntensify`          | Number of worsening iterations before revert               | `400`   |
 | `--neighborhood_exploring`             | Disable revert to best solution                            |         |
+
+### Kernelization (Reduction) Rules
+
+| Option                                 | Description                       |
+|----------------------------------------|-----------------------------------|
+| `--kernelization_unitEdgeRule`         | Apply Unit-Edge rule              |
+| `--kernelization_vertexDominationRule` | Apply Vertex-Domination rule      |
+| `--kernelization_edgeDominationRule`   | Apply Edge-Domination rule        |
+| `--kernelization_allRules`             | Apply all kernelization rules     |
 
 ---
 

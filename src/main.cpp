@@ -28,7 +28,7 @@
 int main(int argc, char* argv[]) {
 #if _DEBUG
     //"--kernelization_unitEdgeRule", "--kernelization_vertexDominationRule", "--kernelization_edgeDominationRule"
-    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "SmallExample.hgr", "--localSearch_random", "--localSearch_numIterations", "100000", "1", "--localSearch_numDeletions", "5" };
+    const char* fakeArgv[] = { argv[0], "-a", "greedy", "-i", "SmallExample.hgr", "--localSearch_random", "--localSearch_numIterations", "100000", "--localSearch_numDeletions", "5" };
     argc = sizeof(fakeArgv) / sizeof(fakeArgv[0]);
     argv = const_cast<char**>(fakeArgv);
     std::cout << "DEBUG MODE ACTIVATED" << std::endl;
@@ -46,10 +46,10 @@ int main(int argc, char* argv[]) {
 
     options.add_options()
         ("a,algorithm", "Algorithm to use (e.g. Greedy, AdaptiveGreedy, BranchAndReduce, VC)", cxxopts::value<std::string>())
-        ("vc_numIterations", "Randomly round the fractional solution of the VC algorithm to the specified number of iterations", cxxopts::value<uint32_t>()->default_value("5"))
-        ("localSearch_numIterations", "How many local search iterations to run", cxxopts::value<uint32_t>()->default_value("0"))
-        ("localSearch_numDeletions", "How many nodes to delete per local search iteration", cxxopts::value<uint32_t>()->default_value("0"))
-        ("localSearch_tabuLength", "How long the tabu list should be", cxxopts::value<uint32_t>()->default_value("10"))
+        ("vc_numIterations", "Randomly round the fractional solution of the VC algorithm to the specified number of iterations", cxxopts::value<uint32_t>()->default_value("1000"))
+        ("localSearch_numIterations", "How many local search iterations to run", cxxopts::value<uint32_t>()->default_value("100000"))
+        ("localSearch_numDeletions", "How many nodes to delete per local search iteration", cxxopts::value<uint32_t>()->default_value("5"))
+        ("localSearch_tabuLength", "How long the tabu list should be", cxxopts::value<uint32_t>()->default_value("25"))
         ("kernelization_unitEdgeRule", "Apply the Unit Edge Rule kernelization method")
         ("kernelization_vertexDominationRule", "Apply the Vertex Domination Rule kernelization method")
         ("kernelization_edgeDominationRule", "Apply the Edge Domination Rule kernelization method")
@@ -65,10 +65,10 @@ int main(int argc, char* argv[]) {
         ("neighborhood_oscillating", "Apply local search to an oscillating neighborhood")
         ("neighborhood_shrinking_oscillating", "Apply local search to a first shrinking, then oscillating neighborhood")
         ("neighborhood_minDeletions", "How many nodes to delete per local search iteration at least", cxxopts::value<uint32_t>()->default_value("5"))
-        ("neighborhood_stepInterval", "After how many iterations to reduce the number of deletions", cxxopts::value<uint32_t>()->default_value("1000"))
-        ("neighborhood_period", "After how many iterations to cycle the number of deletions", cxxopts::value<uint32_t>()->default_value("1000"))
+        ("neighborhood_stepInterval", "After how many iterations to reduce the number of deletions", cxxopts::value<uint32_t>()->default_value("800"))
+        ("neighborhood_period", "After how many iterations to cycle the number of deletions", cxxopts::value<uint32_t>()->default_value("800"))
         ("neighborhood_intensifying", "Revert to best solution after a fixed number of worse current solutions")
-        ("neighborhood_numIntensify", "After how many bad iterations to revert back to best solution", cxxopts::value<uint32_t>()->default_value("1"))
+        ("neighborhood_numIntensify", "After how many bad iterations to revert back to best solution", cxxopts::value<uint32_t>()->default_value("400"))
         ("neighborhood_exploring", "Do not revert to best solution after a fixed number of worse current solutions")
         ("i,input", "Use the specified input file instead of reading from stdin", cxxopts::value<std::string>())
         ("h,help", "Show this help message and exit");
