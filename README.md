@@ -33,7 +33,39 @@ It is highly configurable via command-line parameters and intended for research,
 Install GLPK via:
 
 ```bash
-sudo apt install libglpk-dev
+sudo apt update
+sudo apt install build-essential cmake libglpk-dev
+```
+
+Build project via:
+
+```bash
+mkdir build
+cd build
+cmake ..
+make
+```
+
+---
+
+## Usage Examples
+
+Basic greedy run:
+
+```bash
+./hittingset -a greedy -i BigExample.hgr --kernelization_unitEdgeRule
+```
+
+Greedy with local search and neighborhood exploration:
+
+```bash
+./hittingset -a greedy -i BigExample.hgr --kernelization_unitEdgeRule --localSearch_random --localSearch_numIterations 100000 --neighborhood_minDeletions 5 --localSearch_numDeletions 100 --neighborhood_shrinking --neighborhood_stepInterval 800
+```
+
+VC-based algorithm with LP-based local search:
+
+```bash
+./hittingset -a VC -i SmallExample.hgr --kernelization_allRules --localSearch_LP --localSearch_numIterations 100000 --neighborhood_minDeletions 5 --localSearch_numDeletions 100 --neighborhood_shrinking --neighborhood_stepInterval 800
 ```
 
 ---
@@ -93,28 +125,6 @@ The program accepts a wide range of parameters to control its behavior.
 | `--neighborhood_intensifying`          | Return to best solution after several worsening iterations |         |
 | `--neighborhood_numIntensify`          | Number of worsening iterations before revert               | `1`     |
 | `--neighborhood_exploring`             | Disable revert to best solution                            |         |
-
----
-
-## Usage Examples
-
-Basic greedy run:
-
-```bash
-./hittingset -a greedy -i BigExample.hgr --kernelization_unitEdgeRule
-```
-
-Greedy with local search and neighborhood exploration:
-
-```bash
-./hittingset -a greedy -i BigExample.hgr --kernelization_unitEdgeRule --localSearch_random --localSearch_numIterations 100000 --neighborhood_minDeletions 5 --localSearch_numDeletions 100 --neighborhood_shrinking --neighborhood_stepInterval 800
-```
-
-VC-based algorithm with LP-based local search:
-
-```bash
-./hittingset -a VC -i SmallExample.hgr --kernelization_allRules --localSearch_LP --localSearch_numIterations 100000 --neighborhood_minDeletions 5 --localSearch_numDeletions 100 --neighborhood_shrinking --neighborhood_stepInterval 800
-```
 
 ---
 
