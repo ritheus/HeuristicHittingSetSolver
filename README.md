@@ -48,24 +48,24 @@ make
 
 ---
 
-## Usage Examples
+## Recommended Usage Examples
 
 Basic greedy run:
 
 ```bash
-./hittingset -a greedy -i BigExample.hgr --kernelization_unitEdgeRule
+./hittingset -a greedy -i BigExample.hgr
 ```
 
-Greedy with local search and neighborhood exploration:
+Greedy with explorative local search (uniform random destruction + greedy repair) and flat neighborhood:
 
 ```bash
-./hittingset -a greedy -i BigExample.hgr --kernelization_unitEdgeRule --localSearch_random --localSearch_numIterations 100000 --neighborhood_minDeletions 5 --localSearch_numDeletions 100 --neighborhood_shrinking --neighborhood_stepInterval 800
+./hittingset -a greedy -i BigExample.hgr --kernelization_unitEdgeRule --localSearch_random --localSearch_numIterations 100000 --localSearch_numDeletions 5 --neighborhood_flat
 ```
 
-VC-based algorithm with LP-based local search:
+VC-based algorithm with explorative LP-based local search (LP-weighted random destruction + greedy repair) and shrinking neighborhood. This is particularly useful if you already have an LP solution, but the code needs to be tweaked in this case.
 
 ```bash
-./hittingset -a VC -i SmallExample.hgr --kernelization_allRules --localSearch_LP --localSearch_numIterations 100000 --neighborhood_minDeletions 5 --localSearch_numDeletions 100 --neighborhood_shrinking --neighborhood_stepInterval 800
+./hittingset -a VC -i SmallExample.hgr --kernelization_allRules --localSearch_LP --localSearch_numIterations 100000 --localSearch_numDeletions 100 --neighborhood_shrinking --neighborhood_minDeletions 5 --neighborhood_stepInterval 800
 ```
 
 ---
