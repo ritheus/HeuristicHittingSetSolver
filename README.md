@@ -130,4 +130,4 @@ The program accepts a wide range of parameters to control its behavior.
 ## Contact
 
 If you encounter any issues or have questions, feel free to contact:  
-📧 **richardtheus7@gmail.com**
+**richardtheus7[at]gmail.com**
